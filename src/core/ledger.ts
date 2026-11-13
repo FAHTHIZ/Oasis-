@@ -4,6 +4,7 @@
  * agent's final reply against this record.
  */
 import { analyzeCheck } from "../shell/checks.ts";
+import type { TamperFinding } from "./test-tamper.ts";
 
 export interface CheckRun {
 	command: string;
@@ -12,6 +13,8 @@ export interface CheckRun {
 	/** The check's exit status was discarded by a pipe, `||` or a later statement. */
 	masked: boolean;
 }
+
+const normalize = (path: string) => path.replace(/\\/g, "/").replace(/^\.\//, "");
 
 export class TurnLedger {
 	/** Files successfully edited since the last passing check. */
@@ -23,6 +26,12 @@ export class TurnLedger {
 	readonly checks: CheckRun[] = [];
 	/** Files were edited after the latest check ran. */
 	editedAfterLastCheck = false;
+	/** Test and test-config files as they were before the agent first touched them (null: did not exist). */
+	readonly snapshots = new Map<string, string | null>();
+	/** Filled in at the end of the run by comparing snapshots with the files now. */
+	tampering: TamperFinding[] = [];
+	/** The user's prompt for this run. */
+	prompt = "";
 
 	reset(): void {
 		this.unverified.clear();
@@ -30,10 +39,19 @@ export class TurnLedger {
 		this.failedEdits.clear();
 		this.checks.length = 0;
 		this.editedAfterLastCheck = false;
+		this.snapshots.clear();
+		this.tampering = [];
+		this.prompt = "";
+	}
+
+	/** Remember a file's content before its first edit this prompt. Later calls are ignored. */
+	snapshot(path: string, content: string | null): void {
+		const key = normalize(path);
+		if (!this.snapshots.has(key)) this.snapshots.set(key, content);
 	}
 
 	recordEdit(path: string, error?: string): void {
-		const key = path.replace(/\\/g, "/").replace(/^\.\//, "");
+		const key = normalize(path);
 		if (error !== undefined) {
 			this.failedEdits.set(key, error.split("\n")[0]?.slice(0, 200) || "the edit failed");
 			return;

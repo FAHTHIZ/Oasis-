@@ -7,10 +7,14 @@
  * reminder, the user sees a short visible notice instead of a silent false
  * "done". Continuations are capped per user prompt so the agent cannot loop.
  */
+
+import { existsSync, readFileSync } from "node:fs";
+import { isAbsolute, resolve } from "node:path";
 import type { CustomMessageEntryDraft, ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { isBashToolResult, isEditToolResult, isWriteToolResult } from "@earendil-works/pi-coding-agent";
+import { isBashToolResult, isEditToolResult, isToolCallEventType, isWriteToolResult } from "@earendil-works/pi-coding-agent";
 import { DEFAULT_GATES, type Gate, runGates } from "../core/gates.ts";
 import { TurnLedger } from "../core/ledger.ts";
+import { analyzeTestChange, isTestConfigPath, isTestPath } from "../core/test-tamper.ts";
 
 export const GATE_REMINDER_TYPE = "oasis.gate-reminder";
 export const GATE_NOTICE_TYPE = "oasis.notice";
@@ -28,6 +32,14 @@ function textOf(content: unknown): string {
 		.filter((c): c is { type: "text"; text: string } => !!c && typeof c === "object" && (c as { type?: unknown }).type === "text")
 		.map((c) => c.text)
 		.join("\n");
+}
+
+function readOrNull(path: string): string | null {
+	try {
+		return existsSync(path) ? readFileSync(path, "utf8") : null;
+	} catch {
+		return null;
+	}
 }
 
 function finalReply(messages: readonly unknown[]): string | undefined {
@@ -51,9 +63,19 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 		pi.on("before_agent_start", (event) => {
 			if (event.messageType !== "user") return undefined;
 			ledger.reset();
+			ledger.prompt = event.prompt;
 			reminded.clear();
 			noticed.clear();
 			continuations = 0;
+			return undefined;
+		});
+
+		// Snapshot test files before the agent's first edit, so later diffs show only its changes.
+		pi.on("tool_call", (event, ctx) => {
+			if (!isToolCallEventType("write", event) && !isToolCallEventType("edit", event)) return undefined;
+			const path = String(event.input.path ?? "");
+			if (!path || !(isTestPath(path) || isTestConfigPath(path))) return undefined;
+			ledger.snapshot(path, readOrNull(isAbsolute(path) ? path : resolve(ctx.cwd, path)));
 			return undefined;
 		});
 
@@ -69,8 +91,11 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 			return undefined;
 		});
 
-		pi.on("agent_before_settle", (event) => {
+		pi.on("agent_before_settle", (event, ctx) => {
 			if (event.outcome !== "completed") return undefined;
+			ledger.tampering = [...ledger.snapshots].flatMap(([path, before]) =>
+				analyzeTestChange(path, before, readOrNull(isAbsolute(path) ? path : resolve(ctx.cwd, path))),
+			);
 			const reply = finalReply(event.context.contextMessages);
 			if (reply === undefined) return undefined;
 			const findings = runGates({ ledger, reply }, gates);

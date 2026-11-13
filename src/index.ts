@@ -8,9 +8,11 @@ export {
 	type GateFinding,
 	type GateInput,
 	runGates,
+	testTamperGate,
 	unverifiedEditsGate,
 } from "./core/gates.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
+export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { safetyExtension } from "./extensions/safety.ts";

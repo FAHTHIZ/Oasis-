@@ -5,6 +5,7 @@
  */
 import { admitsUnverified, claimedFailedEdits, claimsPassing } from "./claims.ts";
 import type { TurnLedger } from "./ledger.ts";
+import { userAllowsTestChanges } from "./test-tamper.ts";
 
 export interface GateInput {
 	ledger: TurnLedger;
@@ -23,6 +24,16 @@ export interface GateFinding {
 export type Gate = (input: GateInput) => GateFinding | undefined;
 
 const listFiles = (files: Iterable<string>) => [...files].slice(0, 8).join(", ");
+
+export const testTamperGate: Gate = ({ ledger }) => {
+	if (ledger.tampering.length === 0 || userAllowsTestChanges(ledger.prompt)) return undefined;
+	const list = ledger.tampering.map((f) => `${f.file}: ${f.reason}${f.line ? ` (\`${f.line}\`)` : ""}`).join("; ");
+	return {
+		gate: "test-tamper",
+		reminder: `You weakened the tests instead of fixing the code: ${list}. Restore the tests and fix the code so they pass. If you believe a test is wrong, leave it unchanged and explain why to the user.`,
+		notice: `Tests weakened: ${list}. Review these test changes before trusting a passing run.`,
+	};
+};
 
 export const failedEditClaimGate: Gate = ({ ledger, reply }) => {
 	const files = claimedFailedEdits(reply, ledger.failedEdits);
@@ -80,7 +91,13 @@ export const emptyReplyGate: Gate = ({ reply }) => {
 };
 
 /** Gates in priority order: the first unresolved finding gets the reminder. */
-export const DEFAULT_GATES: readonly Gate[] = [failedEditClaimGate, falsePassClaimGate, unverifiedEditsGate, emptyReplyGate];
+export const DEFAULT_GATES: readonly Gate[] = [
+	testTamperGate,
+	failedEditClaimGate,
+	falsePassClaimGate,
+	unverifiedEditsGate,
+	emptyReplyGate,
+];
 
 export function runGates(input: GateInput, gates: readonly Gate[] = DEFAULT_GATES): GateFinding[] {
 	const out: GateFinding[] = [];
