@@ -9,6 +9,9 @@ import { createHarness, type Harness, messagesText } from "./harness.ts";
 const tool = (name: string, args: Parameters<typeof fauxToolCall>[1]) =>
 	fauxAssistantMessage(fauxToolCall(name, args), { stopReason: "toolUse" });
 
+const sedInPlace = (expression: string) =>
+	process.platform === "darwin" ? "sed -i '' '" + expression + "' a.txt" : "sed -i '" + expression + "' a.txt";
+
 describe("no-op edit check", () => {
 	let harness: Harness | undefined;
 	afterEach(() => {
@@ -33,8 +36,8 @@ describe("no-op edit check", () => {
 		harness = await createHarness(
 			[createNoopEditExtension({ env: {} })],
 			[
-				tool("bash", { command: "sed -i 's/missing/x/' a.txt" }),
-				tool("bash", { command: "sed -i 's/hello/bye/' a.txt" }),
+				tool("bash", { command: "sedInPlace("s/missing/x/")" }),
+				tool("bash", { command: "sedInPlace("s/hello/bye/")" }),
 				fauxAssistantMessage(fauxText("done")),
 			],
 		);
@@ -49,7 +52,7 @@ describe("no-op edit check", () => {
 	it("can be turned off", async () => {
 		harness = await createHarness(
 			[createNoopEditExtension({ env: { OASIS_NOOP_EDIT_CHECK: "0" } })],
-			[tool("bash", { command: "sed -i 's/missing/x/' a.txt" }), fauxAssistantMessage(fauxText("done"))],
+			[tool("bash", { command: "sedInPlace("s/missing/x/")" }), fauxAssistantMessage(fauxText("done"))],
 		);
 		writeFileSync(join(harness.cwd, "a.txt"), "hello\n");
 		await harness.session.prompt("edit");

@@ -7,8 +7,8 @@
  * ignored files are never added.
  */
 import { execFile } from "node:child_process";
-import { existsSync } from "node:fs";
-import { isAbsolute, join, relative, resolve } from "node:path";
+import { existsSync, realpathSync } from "node:fs";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
 const TRUE = /^(?:1|true|yes|on)$/i;
 
@@ -95,8 +95,19 @@ export async function autoCommitTurn(options: { root: string; paths: string[]; p
 	const gitDir = (await git(["rev-parse", "--absolute-git-dir"], repo)).stdout.trim();
 	if (gitDir && ["MERGE_HEAD", "CHERRY_PICK_HEAD", "REVERT_HEAD", "rebase-merge", "rebase-apply"].some((n) => existsSync(join(gitDir, n))))
 		return { skipped: "a merge, rebase or cherry-pick is in progress" };
-	const inside = [...new Set(options.paths.map((item) => relative(repo, resolve(options.root, item))))].filter(
-		(item) => item && !item.startsWith("..") && !isAbsolute(item),
+	// Git may report a physical repository path while Node's cwd/tmpdir still
+	// contains a symlinked prefix (notably /var vs /private/var on macOS).
+	// Normalize both roots before deciding whether a changed path is in-repo.
+	let physicalRepo: string;
+	let physicalRoot: string;
+	try {
+		physicalRepo = realpathSync(repo);
+		physicalRoot = realpathSync(options.root);
+	} catch (error) {
+		return { error: `could not resolve the repository path: ${(error as Error).message}` };
+	}
+	const inside = [...new Set(options.paths.map((item) => relative(physicalRepo, resolve(physicalRoot, item))))].filter(
+		(item) => item && item !== ".." && !item.startsWith(".." + sep) && !isAbsolute(item),
 	);
 	if (!inside.length) return { skipped: "the changed files are outside the repository" };
 	const ignored = await git(["check-ignore", "--stdin"], repo, `${inside.join("\n")}\n`);

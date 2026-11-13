@@ -124,11 +124,13 @@ export class TerminalSession {
 	/** Wait until output has been quiet for `quietMs`, the process exits, or `maxMs` passes. */
 	async settle(maxMs: number, quietMs = 300): Promise<void> {
 		const deadline = Date.now() + maxMs;
-		let last = -1;
+		let last = this.raw.length + this.dropped;
+		let sawOutput = last > 0;
 		while (this.running && Date.now() < deadline) {
 			await new Promise((resolve) => setTimeout(resolve, Math.max(10, Math.min(quietMs, deadline - Date.now()))));
 			const now = this.raw.length + this.dropped;
-			if (now === last) return;
+			if (now > 0) sawOutput = true;
+			if (sawOutput && now === last) return;
 			last = now;
 		}
 	}

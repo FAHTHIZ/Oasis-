@@ -44,7 +44,7 @@ describe("auto-commit", () => {
 		const paths = changedPaths(before, await dirtySnapshot(dir));
 		expect(paths).toEqual(["a.txt", "new.txt"]);
 		const result = await autoCommitTurn({ root: dir, paths, prompt: "update a" });
-		expect("committed" in result && result.files).toEqual(["a.txt", "new.txt"]);
+		expect(result).toMatchObject({ committed: expect.any(String), files: ["a.txt", "new.txt"] });
 		expect(git(dir, "log", "-1", "--format=%s")).toBe("oasis: update a");
 		expect(git(dir, "status", "--porcelain")).toBe("?? user.txt");
 	});

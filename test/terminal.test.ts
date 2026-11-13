@@ -1,7 +1,7 @@
 import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTerminalExtension } from "../src/extensions/terminal.ts";
-import { cleanOutput, keyBytes, TerminalSessions } from "../src/shell/pty.ts";
+import { cleanOutput, keyBytes, TerminalSession, TerminalSessions, type PtyProcess } from "../src/shell/pty.ts";
 import { createHarness, type Harness, messagesText } from "./harness.ts";
 
 const call = (args: Parameters<typeof fauxToolCall>[1]) => fauxAssistantMessage(fauxToolCall("terminal", args), { stopReason: "toolUse" });
@@ -19,6 +19,21 @@ describe("pty helpers", () => {
 		expect(keyBytes("up")).toBe("\x1b[A");
 		expect(() => keyBytes("hyper")).toThrow(/unknown key/);
 		expect(cleanOutput("\x1b[32mgreen\x1b[0m\r\nprogress 10%\rprogress 99%\nab\x08c")).toBe("green\nprogress 99%\nac");
+	});
+
+	it("waits for a first output chunk that arrives after the initial quiet period", async () => {
+		let emit: ((data: string) => void) | undefined;
+		const proc = {
+			onData(listener: (data: string) => void) { emit = listener; },
+			onExit() {},
+			write() {},
+			kill() {},
+			pid: 1,
+		} as unknown as PtyProcess;
+		const session = new TerminalSession("t-delayed", "delayed", process.cwd(), proc);
+		setTimeout(() => emit?.("ready"), 250);
+		await session.settle(1500, 50);
+		expect(session.readNew()).toBe("ready");
 	});
 
 	it("runs an interactive program in a real pty", async () => {
