@@ -9,6 +9,8 @@ export {
 	worktreeSetupPlan,
 } from "./agents/worktrees.ts";
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
+export { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./code/ast.ts";
+export { buildRepoMap, extractDefinitions, listSourceFiles, type RepoMap, type RepoMapOptions } from "./code/repo-map.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
@@ -40,6 +42,7 @@ export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } 
 export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
+export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";

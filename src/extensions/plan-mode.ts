@@ -23,7 +23,18 @@ export type PermissionMode = "default" | "plan";
 const state: { mode: PermissionMode } = { mode: "default" };
 export const currentPermissionMode = (): PermissionMode => state.mode;
 
-const READ_TOOLS = new Set(["read", "grep", "find", "ls", "web_fetch", "web_search", "session_search", "todo", "exit_plan_mode"]);
+const READ_TOOLS = new Set([
+	"read",
+	"grep",
+	"find",
+	"ls",
+	"web_fetch",
+	"web_search",
+	"session_search",
+	"repo_map",
+	"todo",
+	"exit_plan_mode",
+]);
 
 const READ_ONLY_AGENTS = new Set(["explore", "explorer", "plan", "planner"]);
 
