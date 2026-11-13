@@ -149,6 +149,7 @@ export {
 	describeAutoCommit,
 	dirtySnapshot,
 } from "./git/auto-commit.ts";
+export { buildTask, type GitHubEvent, type GitHubTask, githubApi, githubCli, mentions, replyBody } from "./github/action.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";

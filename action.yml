@@ -1,0 +1,52 @@
+name: OASIS
+description: Run the OASIS coding agent on issues and pull requests when someone mentions @oasis, or on a prompt you give it.
+branding:
+  icon: message-circle
+  color: blue
+inputs:
+  prompt:
+    description: Run this prompt instead of waiting for a mention (automation mode).
+    required: false
+    default: ""
+  trigger_phrase:
+    description: Mention that starts OASIS in comments, issues and pull requests.
+    required: false
+    default: "@oasis"
+  model:
+    description: Model pattern or provider/id, as for oasis --model.
+    required: false
+    default: ""
+  github_token:
+    description: Token used to reply and react on the thread.
+    required: false
+    default: ${{ github.token }}
+  args:
+    description: Extra arguments for oasis (for example --thinking high).
+    required: false
+    default: ""
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - name: Build OASIS
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --no-audit --no-fund
+        npm run build
+    - name: Run OASIS
+      shell: bash
+      env:
+        OASIS_PROMPT: ${{ inputs.prompt }}
+        OASIS_TRIGGER_PHRASE: ${{ inputs.trigger_phrase }}
+        OASIS_MODEL: ${{ inputs.model }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        OASIS_ARGS: ${{ inputs.args }}
+      run: |
+        git config --global user.name >/dev/null || git config --global user.name "oasis[bot]"
+        git config --global user.email >/dev/null || git config --global user.email "oasis[bot]@users.noreply.github.com"
+        # shellcheck disable=SC2086
+        node "${{ github.action_path }}/bin/oasis.mjs" github $OASIS_ARGS

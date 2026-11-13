@@ -4,6 +4,7 @@
 
 ### Added
 
+- GitHub Action (`action.yml`, `oasis github`): `@oasis` mentions on issues and pull requests, plus a prompt-driven automation mode.
 - `/review` (Codex's rubric), `/security-review` (Anthropic's command) and `/init` (Codex's AGENTS.md prompt).
 - `` !`command` `` output in slash-command files, as in Claude Code.
 - Plugins: LSP servers (`.lsp.json`), output styles and `bin/` executables; `lspServers` settings also accept Claude Code's `extensionToLanguage` format.

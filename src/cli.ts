@@ -9,6 +9,9 @@ if (argv[0] === "cron") {
 } else if (argv[0] === "gateway") {
 	const { gatewayCli } = await import("./gateway/cli.ts");
 	process.exitCode = await gatewayCli(argv.slice(1));
+} else if (argv[0] === "github") {
+	const { githubCli } = await import("./github/action.ts");
+	process.exitCode = await githubCli(argv.slice(1));
 } else if (argv[0] === "acp") {
 	const { runAcp } = await import("./acp.ts");
 	await runAcp();
