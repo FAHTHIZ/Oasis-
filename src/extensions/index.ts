@@ -1,6 +1,7 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
 import { createCheckpointsExtension } from "./checkpoints.ts";
 import { identityExtension } from "./identity.ts";
+import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
@@ -14,6 +15,8 @@ export function oasisExtensions(): InlineExtension[] {
 		// Memory sets a prompt section, so it runs before identity rewrites the rendered prompt.
 		{ name: "oasis-memory", factory: createMemoryExtension() },
 		{ name: "oasis-identity", factory: identityExtension },
+		// CLAUDE.md/AGENTS.md hierarchy, @imports, rules and other tools' instruction files.
+		{ name: "oasis-instructions", factory: createInstructionsExtension() },
 		// Repair rewrites calls when the message ends, so safety, sandbox and gates see the real tool and arguments.
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
 		{ name: "oasis-safety", factory: safetyExtension },
