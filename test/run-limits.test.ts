@@ -9,9 +9,11 @@ const tool = (name: string, args: Parameters<typeof fauxToolCall>[1]) =>
 const say = (text: string) => fauxAssistantMessage(fauxText(text));
 
 let harness: Harness | undefined;
+const originalExitCode = process.exitCode;
 afterEach(() => {
 	harness?.dispose();
 	harness = undefined;
+	process.exitCode = originalExitCode;
 });
 
 describe("output schema", () => {
@@ -25,6 +27,20 @@ describe("output schema", () => {
 		expect(checkAnswer(check, '{"n": "x"}')).toMatchObject({ ok: false, errors: expect.stringContaining("/n must be number") });
 		expect(checkAnswer(check, '{"n": 1, "at": "soon"}')).toMatchObject({ ok: false, errors: expect.stringContaining("format") });
 		expect(checkAnswer(check, "nothing")).toMatchObject({ ok: false });
+	});
+
+
+	it("fails closed when the requested schema cannot be loaded", async () => {
+		const notices: string[] = [];
+		harness = await createHarness(
+			[{ name: "limits", factory: createRunLimitsExtension({ outputSchema: "{" }) }],
+			[say("this must not be generated")],
+			{ ui: { notify: (message: string) => notices.push(message) } },
+		);
+		await harness.session.prompt("answer with JSON");
+		expect(harness.calls).toHaveLength(0);
+		expect(process.exitCode).toBe(1);
+		expect(notices.join("\\n")).toContain("--output-schema:");
 	});
 
 	it("sends an invalid answer back with the errors", async () => {

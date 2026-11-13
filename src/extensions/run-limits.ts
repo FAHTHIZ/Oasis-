@@ -43,6 +43,7 @@ export function createRunLimitsExtension(options: { maxTurns?: number; maxBudget
 		let maxTurns: number | undefined;
 		let maxBudget: number | undefined;
 		let schema: SchemaCheck | undefined;
+		let schemaError: string | undefined;
 		let turns = 0;
 		let spent = 0;
 		let retries = 0;
@@ -51,20 +52,29 @@ export function createRunLimitsExtension(options: { maxTurns?: number; maxBudget
 		pi.on("session_start", (_event, ctx) => {
 			maxTurns = options.maxTurns ?? positive(pi.getFlag("max-turns")) ?? positive(process.env.OASIS_MAX_TURNS);
 			maxBudget = options.maxBudgetUsd ?? positive(pi.getFlag("max-budget-usd")) ?? positive(process.env.OASIS_MAX_BUDGET_USD);
+			schema = undefined;
+			schemaError = undefined;
 			const raw = options.outputSchema ?? pi.getFlag("output-schema");
 			if (typeof raw === "string" && raw.trim()) {
 				try {
 					schema = loadOutputSchema(raw, ctx.cwd);
 				} catch (error) {
-					ctx.ui.notify(`--output-schema: ${(error as Error).message}`, "error");
+					 schemaError = (error as Error).message;
+					ctx.ui.notify(`--output-schema: ${schemaError}`, "error");
 				}
 			}
 		});
 
-		pi.on("before_agent_start", (event) => {
+		pi.on("before_agent_start", (event, ctx) => {
 			turns = 0;
 			retries = 0;
 			stopped = false;
+			if (schemaError) {
+				stopped = true;
+				process.exitCode = 1;
+				ctx.abort();
+				return undefined;
+			}
 			if (!schema) return undefined;
 			event.systemPromptOptions.sections = { ...event.systemPromptOptions.sections, output_schema: schemaInstructions(schema.schema) };
 			return undefined;

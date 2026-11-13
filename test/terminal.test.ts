@@ -36,6 +36,25 @@ describe("pty helpers", () => {
 });
 
 describe("terminal tool", () => {
+
+	it("checks a command assembled across separate writes before sending Enter", async () => {
+		harness = await createHarness(
+			[{ name: "term", factory: createTerminalExtension({ wrap: async (c) => c }) }],
+			[
+				call({ action: "start", command: "bash --norc --noprofile -i", wait_ms: 1000 }),
+				call({ action: "write", id: "t1", input: "rm -rf /" }),
+				call({ action: "write", id: "t1", keys: ["enter"] }),
+				call({ action: "write", id: "t1", keys: ["ctrl-c"] }),
+				call({ action: "kill", id: "t1" }),
+				fauxAssistantMessage(fauxText("done")),
+			],
+		);
+		await harness.session.prompt("check split terminal input");
+		const result = messagesText(harness.calls[2]?.messages ?? []);
+		expect(result).toContain("OASIS safety policy");
+		expect(result).toContain("refusing recursive delete");
+	});
+
 	it("starts, types into and lists a session, and applies the safety policy to typed lines", async () => {
 		harness = await createHarness(
 			[{ name: "term", factory: createTerminalExtension({ wrap: async (c) => c }) }],

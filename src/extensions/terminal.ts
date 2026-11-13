@@ -25,12 +25,41 @@ async function checkCommand(command: string, ctx: ExtensionContext): Promise<voi
 	throw new Error(`OASIS safety policy: this command ${verdict.ask}, so it needs the user's approval. Ask the user, or find a safer way.`);
 }
 
+/**
+ * Apply the shell policy to complete text lines, including text split across
+ * multiple tool calls. Interactive applications may interpret terminal control
+ * keys or non-shell input themselves; this is a guardrail, not an isolation
+ * boundary. The configured OS sandbox remains the execution boundary.
+ */
+async function checkedTerminalInput(previous: string, bytes: string, ctx: ExtensionContext): Promise<string> {
+	let pending = previous;
+	for (const char of bytes) {
+		if (char === "\r" || char === "\n") {
+			if (pending.trim()) await checkCommand(pending, ctx);
+			pending = "";
+		} else if (char === "\x03" || char === "\x04") {
+			pending = "";
+		} else if (char === "\x7f" || char === "\b") {
+			pending = pending.slice(0, -1);
+		} else if (char === "\x1b") {
+			// Escape sequences (for example arrow keys) are interpreted by the PTY app.
+		} else if (char >= " " || char === "\t") {
+			pending += char;
+		}
+	}
+	return pending;
+}
+
 export function createTerminalExtension(options: { spawner?: PtySpawner; wrap?: (command: string, cwd: string) => Promise<string> } = {}) {
 	return (pi: ExtensionAPI) => {
 		if (/^(0|false|off|no)$/i.test(process.env.OASIS_TERMINAL ?? "")) return;
 		const sessions = new TerminalSessions(options.spawner);
+		const pendingInput = new Map<string, string>();
 		const wrap = options.wrap ?? sandboxedCommand;
-		pi.on("session_shutdown", () => sessions.killAll());
+		pi.on("session_shutdown", () => {
+			pendingInput.clear();
+			sessions.killAll();
+		});
 
 		const report = (id: string, output: string) => {
 			const s = sessions.get(id);
@@ -80,11 +109,13 @@ export function createTerminalExtension(options: { spawner?: PtySpawner; wrap?: 
 					}
 					case "write": {
 						const session = sessions.get(params.id ?? "");
-						const typed = params.input ?? "";
-						for (const line of typed.split(/\r?\n/).slice(0, -1)) if (line.trim()) await checkCommand(line, ctx);
-						const bytes = typed.replace(/\r?\n/g, "\r") + (params.keys ?? []).map(keyBytes).join("");
+						const typed = (params.input ?? "").replace(/\r\n|\n/g, "\r");
+						const bytes = typed + (params.keys ?? []).map(keyBytes).join("");
 						if (!bytes) throw new Error("terminal write needs input or keys");
+						const pending = await checkedTerminalInput(pendingInput.get(session.id) ?? "", bytes, ctx);
 						session.write(bytes);
+						if (pending) pendingInput.set(session.id, pending);
+						else pendingInput.delete(session.id);
 						await session.settle(params.wait_ms ?? 1000);
 						return report(session.id, session.readNew());
 					}
@@ -99,6 +130,7 @@ export function createTerminalExtension(options: { spawner?: PtySpawner; wrap?: 
 						await session.settle(500, 100);
 						const out = report(session.id, session.readNew());
 						sessions.remove(session.id);
+						pendingInput.delete(session.id);
 						return out;
 					}
 					default: {
