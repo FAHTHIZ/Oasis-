@@ -19,6 +19,10 @@ interface TSNode {
 	startIndex: number;
 	endIndex: number;
 	startPosition: { row: number };
+	hasError?: boolean;
+	isMissing?: boolean;
+	childCount?: number;
+	child?(index: number): TSNode | null;
 }
 interface TSCapture {
 	name: string;
@@ -334,6 +338,76 @@ export function analyzeCode(grammar: Grammar, text: string, maxDefs = 400): { de
 			masked = out + text.slice(at);
 		}
 		return { defs, masked };
+	} finally {
+		tree.delete();
+	}
+}
+
+const SYNTAX_GRAMMARS: Record<string, string> = { ...GRAMMARS, css: "tree-sitter-css.wasm" };
+const syntaxParsers = new Map<string, Promise<TSParser | null>>();
+
+/** Grammar key for a syntax check of this file (code languages plus CSS), or null. */
+export function syntaxGrammarForFile(file: string): string | null {
+	return /\.css$/i.test(file) ? "css" : grammarForFile(file);
+}
+
+function syntaxParser(key: string): Promise<TSParser | null> {
+	let pending = syntaxParsers.get(key);
+	if (!pending) {
+		pending = (async () => {
+			const rt = await loadTreeSitter();
+			const file = rt && SYNTAX_GRAMMARS[key] ? join(rt.dir, SYNTAX_GRAMMARS[key] as string) : null;
+			if (!rt || !file || !existsSync(file)) return null;
+			try {
+				const parser = new rt.Parser();
+				parser.setLanguage(await rt.Language.load(file));
+				return parser;
+			} catch {
+				return null;
+			}
+		})();
+		syntaxParsers.set(key, pending);
+	}
+	return pending;
+}
+
+/**
+ * The first few syntax errors tree-sitter finds, as "label line N: ..." (lines shifted by lineOffset).
+ * Empty when the text parses cleanly; null when the grammar is unavailable.
+ */
+export async function syntaxErrors(key: string, text: string, label: string, lineOffset = 0): Promise<string[] | null> {
+	const parser = await syntaxParser(key);
+	if (!parser) return null;
+	let tree: { rootNode: TSNode; delete(): void } | null = null;
+	try {
+		tree = parser.parse(text);
+	} catch {
+		return null;
+	}
+	if (!tree) return null;
+	try {
+		if (!tree.rootNode.hasError) return [];
+		const problems: string[] = [];
+		const visit = (node: TSNode) => {
+			if (problems.length >= 3) return;
+			const line = node.startPosition.row + 1 + lineOffset;
+			if (node.isMissing) {
+				problems.push(`${label} line ${line}: missing ${JSON.stringify(node.type)}`);
+				return;
+			}
+			if (node.type === "ERROR") {
+				const snippet = (text.slice(node.startIndex, Math.min(node.endIndex, node.startIndex + 40)).split("\n")[0] ?? "").trim();
+				problems.push(`${label} line ${line}: syntax error${snippet ? ` near ${JSON.stringify(snippet)}` : ""}`);
+				return;
+			}
+			if (!node.hasError) return;
+			for (let i = 0; i < (node.childCount ?? 0); i++) {
+				const child = node.child?.(i);
+				if (child) visit(child);
+			}
+		};
+		visit(tree.rootNode);
+		return problems.length ? problems : [`${label}: syntax error`];
 	} finally {
 		tree.delete();
 	}

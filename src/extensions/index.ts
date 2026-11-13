@@ -22,6 +22,7 @@ import { createSecretShieldExtension } from "./secret-shield.ts";
 import { createSkillsExtension } from "./skills.ts";
 import { createStandingCorrectionsExtension } from "./standing-corrections.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
+import { createSyntaxCheckExtension } from "./syntax-check.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
 import { createTurnGatesExtension } from "./turn-gates.ts";
@@ -55,6 +56,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
+		{ name: "oasis-syntax-check", factory: createSyntaxCheckExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
@@ -94,6 +96,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
+		{ name: "oasis-syntax-check", factory: createSyntaxCheckExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },

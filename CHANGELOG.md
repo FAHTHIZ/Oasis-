@@ -4,6 +4,7 @@
 
 ### Added
 
+- Post-edit syntax check, ported from the original OASIS static checks (`src/code/syntax-check.ts`): new syntax errors in code, CSS, JSON, YAML, TOML and HTML (inline scripts and styles, missing local files) are appended to `write`/`edit` results. `OASIS_SYNTAX_CHECK=0`.
 - Jupyter notebooks, ported from the original OASIS: cell-by-cell `read` rendering and the `notebook_edit` tool (`src/tools/notebook.ts`), mapped to Claude Code's `NotebookEdit` for hooks and agent files, checked by the sandbox and protected paths. `OASIS_NOTEBOOK=0`.
 - Agent ignore files, ported from the original OASIS: `.oasisignore` plus Cursor, Devin, Windsurf, Gemini and Aider ignore files are honoured by file tools, listings, `lsp`, `ast_grep` and `repo_map` (`src/security/agent-ignore.ts`, `ignore`). `OASIS_AGENT_IGNORE=0`.
 - Structural search, ported from the original OASIS: the read-only `ast_grep` tool (`src/code/ast-grep.ts`) on `@ast-grep/napi` with Python, Go and Rust grammars, metavariable captures, globs, strictness, and rewrite previews returned as unique `edit` edits. `OASIS_AST_GREP=0`.

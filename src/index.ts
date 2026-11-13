@@ -37,6 +37,7 @@ export {
 	severityName,
 } from "./code/lsp.ts";
 export { buildRepoMap, extractDefinitions, listSourceFiles, type RepoMap, type RepoMapOptions } from "./code/repo-map.ts";
+export { canCheckSyntax, checkFile, newProblems } from "./code/syntax-check.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
@@ -76,6 +77,7 @@ export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
+export { createSyntaxCheckExtension } from "./extensions/syntax-check.ts";
 export { todoExtension } from "./extensions/todo.ts";
 export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
