@@ -70,14 +70,14 @@ describe("sandbox extension", () => {
 	});
 
 	it.runIf(osSandbox)("runs shell commands under OS isolation", async () => {
-		const escape = join(homedir(), `oasis-escape-${process.pid}`);
+		const escapePath = join(homedir(), `oasis-escapePath-${process.pid}`);
 		harness = await createHarness(
 			[{ name: "oasis-sandbox", factory: createSandboxExtension({ mode: "workspace-write", agentDir: "/nonexistent" }) }],
-			[tool("bash", { command: `echo inside > in.txt && touch ${escape}` }), say("ok")],
+			[tool("bash", { command: `echo inside > in.txt && touch ${escapePath}` }), say("ok")],
 		);
-		await harness.session.prompt("try to escape");
+		await harness.session.prompt("try to escapePath");
 		expect(readFileSync(join(harness.cwd, "in.txt"), "utf8").trim()).toBe("inside");
-		expect(existsSync(escape)).toBe(false);
+		expect(existsSync(escapePath)).toBe(false);
 		const text = messagesText(harness.calls[1]?.messages ?? []);
 		expect(text).toContain("Read-only file system");
 		expect(text).toContain("[OASIS sandbox]");
