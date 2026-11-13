@@ -39,6 +39,7 @@ const READ_TOOLS = new Set([
 	// Reading or stopping the agent's own background commands changes nothing in the workspace.
 	"ask_user_question",
 	"task_output",
+	"session_message",
 	"bash_output",
 	"kill_shell",
 ]);

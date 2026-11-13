@@ -4,6 +4,7 @@
 
 ### Added
 
+- Session messaging: `/peers`, `/notify` and the `session_message` tool for coordinating live sessions in one workspace.
 - Output styles: `/output-style` with Claude Code-compatible built-in and custom Markdown styles.
 - Background subagents (Claude Code background agents): `task` `run_in_background`, `task_output`, `/tasks`.
 - `ask_user_question` (Claude Code AskUserQuestion) with a per-prompt question budget.
