@@ -4,6 +4,8 @@
 
 ### Added
 
+- Memory extension: bounded MEMORY.md (agent notes) and USER.md (user profile) curated with a `memory` tool (add, patch, remove), scanned for prompt injection, exfiltration commands, SSH keys and secrets, and frozen into the system prompt at session start. `session_search` tool: FTS5 full-text search over all past sessions using Node's built-in SQLite, indexed incrementally, plus reading a hit in context. `/memory` command.
+
 - Checkpoints extension: files are snapshotted into a shadow git repository before every user prompt. `/undo` restores the latest checkpoint that differs from the current files (edits and shell changes alike), `/redo` reverses it, `/checkpoints` lists them, and `/fork` or `/tree` to a user message offers to restore files too.
 
 - Test-tamper gate: test and test-config files are snapshotted just before the agent's first edit and diffed with jsdiff at the end of the run. Skips, `.only`, deleted tests or assertions, assertions loosened to truthiness, swallowed assertion errors and `|| true` test scripts trigger a reminder to restore the tests and fix the code, then a visible "Tests weakened" notice. Unlike OASIS 1 (which diffed against git HEAD), the user's own uncommitted test edits are never blamed on the agent.

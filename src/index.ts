@@ -23,9 +23,12 @@ export {
 } from "./extensions/checkpoints.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
+export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
+export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
+export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
 export {
 	buildRuntimePolicy,
 	DEFAULT_ALLOWED_DOMAINS,

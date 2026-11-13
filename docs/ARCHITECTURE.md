@@ -73,6 +73,12 @@ Mode comes from `--sandbox`, then `OASIS_SANDBOX`, then `~/.oasis/agent/sandbox.
 
 Each checkpoint is a `custom` session entry (`oasis.checkpoint`: commit, tree, prompt, time), so it follows the session tree: `/undo` only considers checkpoints on the current branch, and they survive restarts.
 
+## Memory
+
+`src/memory/store.ts`: entries separated by a `§` line, 2,200 characters for MEMORY.md and 1,375 for USER.md (Hermes' budget). `add` rejects exact duplicates; `patch` replaces one span inside the single entry that contains it (or rewrites an entry passed whole); `remove` deletes by unique substring. A write that would exceed the limit fails with the current contents so the agent consolidates; nothing is dropped silently. Every entry is scanned for invisible Unicode, prompt-injection phrasing, credential exfiltration commands, SSH keys and common token formats before it is written. Files are written atomically (temp file + rename) under `~/.oasis/agent/memory/`, which the sandboxed modes keep out of reach of shell and file tools, so there the scanned tool is the only way in.
+
+`src/memory/session-index.ts`: `~/.oasis/agent/memory/sessions.db` (WAL) with `files` (path, session id, cwd, title, byte offset), `messages` and an external-content FTS5 table kept in sync by triggers. Each search first indexes new bytes of every session file (only complete lines), drops files that were deleted and restarts files that shrank. Indexed text: user and assistant text, tool calls as `[tool] command-or-path`, tool output and `!` shell output cut to 1,200 characters. Free-text queries become quoted terms, all required, then any; queries using FTS5 syntax are tried as written first. At most three hits per session, ranked by bm25 then recency; search defaults to sessions from the same directory and leaves out the current one.
+
 ## Tests
 
 `test/harness.ts` builds a real `AgentSession` in a temp directory with an in-memory session manager, in-memory settings, and pi-ai's faux provider registered on a `ModelRuntime`. Tests script model turns with `fauxAssistantMessage`, `fauxToolCall` and `fauxText`, run `session.prompt()`, then assert on files written, model calls made and session entries recorded. No network, no model, about a second for the whole suite.
