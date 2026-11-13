@@ -5,26 +5,50 @@
  *   files (src/skills/manage.ts). New skills go to <agent dir>/skills, or the
  *   project's .oasis/skills with scope "project"; pi loads both, so they show
  *   up in the skills list of later sessions.
- * - Learning nudge: after a run with many tool calls and no skill or memory
- *   update, the next prompt carries a hidden reminder to save what was worth
- *   keeping as a skill or memory.
+ * - Learning loop: after a run with many tool calls and no skill or memory
+ *   update, a background reviewer agent (src/skills/review.ts) reads a
+ *   condensed transcript and saves skills or memories while the user carries
+ *   on (`--learning background`, the default). `--learning nudge` instead
+ *   adds a hidden reminder to the next prompt; `--learning off` disables it.
  * - `/skills`: list loaded skills and where they live.
  */
 import { homedir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { StringEnum } from "@earendil-works/pi-ai";
-import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
+import {
+	type ExtensionAPI,
+	type ExtensionContext,
+	getAgentDir,
+	type InlineExtension,
+	type ModelRuntime,
+	type SettingsManager,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
+import { runSubagent } from "../agents/runner.ts";
 import { findSkillDir, SkillError, SkillManager, type SkillOperation } from "../skills/manage.ts";
+import { condenseTranscript, REVIEW_AGENT, REVIEW_PROMPT } from "../skills/review.ts";
+import { createMemoryExtension } from "./memory.ts";
+import { safetyExtension } from "./safety.ts";
 
 export interface SkillsOptions {
 	/** Where user-scope skills are created. Default: <agent dir>/skills. */
 	userDir?: string;
 	/** Extra directories searched for existing skills (tests). */
 	roots?: string[];
-	/** Tool calls in one run before the learning nudge. 0 disables it. Default 15. */
+	/** Tool calls in one run before the learning review. 0 disables it. Default 15. */
 	nudgeAfter?: number;
+	/** How to learn after long runs. Default: the --learning flag, else "background". */
+	learning?: LearningMode;
+	/** Extensions for the reviewer agent. Default: memory, skills (no review) and safety. */
+	reviewExtensions?: () => InlineExtension[];
+	/** Tests: settings and no resource discovery for the reviewer. */
+	settingsManager?: SettingsManager;
+	isolatedResources?: boolean;
+	/** Called when a background review finishes (tests). */
+	onReview?: (output: string) => void;
 }
+
+export type LearningMode = "background" | "nudge" | "off";
 
 export const SKILL_NUDGE_TYPE = "oasis.skill-nudge";
 const LEARNING_TOOLS = new Set(["skill_manage", "memory"]);
@@ -43,6 +67,50 @@ export function createSkillsExtension(options: SkillsOptions = {}) {
 		let calls = 0;
 		let learned = false;
 		let pending = 0;
+		let runMessages: unknown[] = [];
+		const reviews = new Set<AbortController>();
+
+		pi.registerFlag("learning", {
+			description: "After long tasks: background (review and save skills/memory), nudge, or off",
+			type: "string",
+		});
+		const mode = (): LearningMode => {
+			const m = options.learning ?? pi.getFlag("learning");
+			return m === "nudge" || m === "off" ? m : "background";
+		};
+
+		const startReview = (ctx: ExtensionContext, messages: unknown[]) => {
+			const modelRuntime = (ctx.modelRegistry as unknown as { runtime?: ModelRuntime }).runtime;
+			const model = ctx.model;
+			if (!modelRuntime || !model) return false;
+			const controller = new AbortController();
+			reviews.add(controller);
+			const extensions = options.reviewExtensions?.() ?? [
+				{ name: "oasis-memory", factory: createMemoryExtension() },
+				{ name: "oasis-skills", factory: createSkillsExtension({ ...options, learning: "off" }) },
+				{ name: "oasis-safety", factory: safetyExtension },
+			];
+			void runSubagent({
+				agent: REVIEW_AGENT,
+				prompt: REVIEW_PROMPT(condenseTranscript(messages)),
+				cwd: ctx.cwd,
+				agentDir: getAgentDir(),
+				model,
+				modelRuntime,
+				extensions,
+				signal: controller.signal,
+				settingsManager: options.settingsManager,
+				isolatedResources: options.isolatedResources,
+			})
+				.then((result) => {
+					const line = result.output.trim().split("\n").at(-1) ?? "";
+					options.onReview?.(result.output);
+					if (/^saved:/i.test(line)) ctx.ui.notify(`Learned: ${line.replace(/^saved:\s*/i, "")}`, "info");
+				})
+				.catch(() => options.onReview?.(""))
+				.finally(() => reviews.delete(controller));
+			return true;
+		};
 
 		const managerFor = (cwd: string, scope: "user" | "project") => {
 			const userDir = options.userDir ?? join(getAgentDir(), "skills");
@@ -117,10 +185,23 @@ export function createSkillsExtension(options: SkillsOptions = {}) {
 			return undefined;
 		});
 
-		pi.on("agent_settled", () => {
-			if (nudgeAfter > 0 && calls >= nudgeAfter && !learned) pending = calls;
+		pi.on("agent_end", (event) => {
+			runMessages.push(...event.messages);
+		});
+
+		pi.on("agent_settled", (event, ctx) => {
+			const due = nudgeAfter > 0 && calls >= nudgeAfter && !learned && !event.aborted;
+			const m = mode();
+			if (due && m === "background" && !startReview(ctx, runMessages)) pending = calls;
+			else if (due && m === "nudge") pending = calls;
 			calls = 0;
 			learned = false;
+			runMessages = [];
+		});
+
+		pi.on("session_shutdown", () => {
+			for (const c of reviews) c.abort();
+			reviews.clear();
 		});
 
 		pi.on("before_agent_start", () => {

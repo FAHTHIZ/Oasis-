@@ -4,6 +4,7 @@
 
 ### Added
 
+- Background learning review: after a run with 15+ tool calls and nothing saved, a reviewer subagent reads a condensed transcript and saves skills or memories in the background. `--learning background|nudge|off`.
 - Skills as procedural memory: the `skill_manage` tool (create, patch, delete, write_file, remove_file) with spec validation, misplaced-field rejection, path confinement, content scanning and lint warnings, a learning nudge after long runs that saved nothing, and `/skills`.
 - Plan mode: `/plan`, `/plan <task>` and `--plan` keep the agent read-only until you approve its plan through the `exit_plan_mode` tool. A shell classifier (`src/shell/readonly.ts`) lets read-only `bash` commands through. Explore and plan subagents, and custom agents with `permissionMode: plan`, now get read-only `bash`. Hooks report `permission_mode: "plan"` while it is on.
 - Reliability extension. Loop detection: identical consecutive tool calls (arguments compared order-independently) get a note in the third result, are blocked from the fifth and stop the run at the eighth; repeating two- or three-call cycles get one note. Model fallback: `--fallback-model provider/id[,...]` or `fallbackModels` in `~/.oasis/agent/settings.json` or `.oasis/settings.json`; when a run ends in a provider error after pi's retries (context overflow excluded), the next untried model with credentials takes over with a visible notice and a hidden instruction to continue, and the original model is restored when the run settles.

@@ -108,12 +108,48 @@ describe("skills extension", () => {
 
 	it("nudges after a long run without learning", async () => {
 		harness = await createHarness(
-			[{ name: "oasis-skills", factory: createSkillsExtension({ userDir: join(dir, "user"), nudgeAfter: 2 }) }],
+			[{ name: "oasis-skills", factory: createSkillsExtension({ userDir: join(dir, "user"), nudgeAfter: 2, learning: "nudge" }) }],
 			[tool("bash", { command: "echo 1" }), tool("bash", { command: "echo 2" }), say("done"), say("second")],
 		);
 		await harness.session.prompt("work");
 		expect(JSON.stringify(harness.calls.at(-1)?.messages)).not.toContain("learning-review");
 		await harness.session.prompt("next");
 		expect(JSON.stringify(harness.calls.at(-1)?.messages)).toContain("took 2 tool calls");
+	});
+
+	it("runs a background review that saves a skill", async () => {
+		const userDir = join(dir, "user");
+		let done: (output: string) => void = () => {};
+		const finished = new Promise<string>((r) => {
+			done = r;
+		});
+		harness = await createHarness(
+			[
+				{
+					name: "oasis-skills",
+					factory: createSkillsExtension({
+						userDir,
+						nudgeAfter: 2,
+						learning: "background",
+						isolatedResources: true,
+						reviewExtensions: () => [{ name: "oasis-skills", factory: createSkillsExtension({ userDir, learning: "off" }) }],
+						onReview: done,
+					}),
+				},
+			],
+			[
+				tool("bash", { command: "echo build" }),
+				tool("bash", { command: "echo test" }),
+				say("built and tested"),
+				tool("skill_manage", { action: "create", name: "build-and-test", content: md("build-and-test") }),
+				say("Saved: build-and-test skill"),
+			],
+		);
+		await harness.session.prompt("build it");
+		expect(await finished).toContain("Saved: build-and-test");
+		expect(existsSync(join(userDir, "build-and-test", "SKILL.md"))).toBe(true);
+		const reviewCall = JSON.stringify(harness.calls.at(-2)?.messages);
+		expect(reviewCall).toContain("TOOL CALL bash");
+		expect(reviewCall).toContain("built and tested");
 	});
 });

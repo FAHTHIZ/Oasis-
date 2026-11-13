@@ -103,7 +103,7 @@ Fallback runs on `agent_before_settle` with outcome `error`, which pi reaches on
 
 Existing skills are located through pi's loaded skills (`getCommands()`), then by searching the user, project, `.agents` and `.claude` skill directories. Skills under `node_modules` or git package installs are locked.
 
-The extension counts tool results per run. When a run reaches `nudgeAfter` (15) calls without a successful `skill_manage` or `memory` call, the next `before_agent_start` adds a hidden `oasis.skill-nudge` message asking the agent to save a skill or memory if anything was worth keeping.
+The extension counts tool results per run. When a run reaches `nudgeAfter` (15) calls without a successful `skill_manage` or `memory` call, it starts a background review (`--learning background`, the default): `src/skills/review.ts` condenses the run's messages (from `agent_end`) into a transcript capped at 40,000 chars, keeping the start and the end, and `runSubagent` runs the `learning-review` agent with read tools, `skill_manage` and `memory`. Its last line (`Saved: ...` or `Nothing saved.`) becomes a notification. Reviews are aborted on shutdown. With `--learning nudge`, or when no model runtime is available, the next `before_agent_start` adds a hidden `oasis.skill-nudge` message instead.
 
 ## Plan mode
 
