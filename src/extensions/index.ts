@@ -10,6 +10,7 @@ import { createInstructionsExtension } from "./instructions.ts";
 import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
@@ -55,6 +56,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
+		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
@@ -93,6 +95,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
+		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },
 		...(depth < MAX_DEPTH
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]

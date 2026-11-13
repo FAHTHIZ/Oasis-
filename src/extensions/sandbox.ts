@@ -121,7 +121,8 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 		// File tools run inside the OASIS process, so the OS sandbox cannot see them; check their paths here.
 		pi.on("tool_call", (event, ctx) => {
 			if (state.mode === "off" || !state.policy) return undefined;
-			if (!isToolCallEventType("write", event) && !isToolCallEventType("edit", event)) return undefined;
+			if (!isToolCallEventType("write", event) && !isToolCallEventType("edit", event) && event.toolName !== "notebook_edit")
+				return undefined;
 			const raw = String((event.input as { path?: unknown }).path ?? "");
 			if (!raw) return undefined;
 			const target = isAbsolute(raw) ? raw : resolve(ctx.cwd, raw);

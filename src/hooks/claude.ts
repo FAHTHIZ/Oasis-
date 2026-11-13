@@ -22,6 +22,7 @@ const NAMES: Record<string, string> = {
 	task: "Task",
 	web_fetch: "WebFetch",
 	web_search: "WebSearch",
+	notebook_edit: "NotebookEdit",
 };
 
 /** The Claude Code name for an OASIS tool (MultiEdit for multi-edit calls). */
@@ -71,6 +72,9 @@ export function toClaudeInput(tool: string, input: Args): Args {
 			}
 			break;
 		}
+		case "notebook_edit":
+			path("notebook_path");
+			break;
 		case "grep":
 			if (out.ignoreCase !== undefined) {
 				out["-i"] = out.ignoreCase;
@@ -91,6 +95,10 @@ export function fromClaudeInput(tool: string, input: Args): Args {
 		args.timeout = Math.max(1, Math.round(args.timeout / 1000));
 	}
 	if (tool === "edit" && args.replace_all === false) delete args.replace_all;
+	if (tool === "notebook_edit" && args.notebook_path !== undefined && args.path === undefined) {
+		args.path = args.notebook_path;
+		delete args.notebook_path;
+	}
 	return repairArgs(tool, args);
 }
 

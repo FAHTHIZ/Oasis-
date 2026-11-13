@@ -11,7 +11,7 @@ export interface ProtectedPathsOptions {
 	env?: NodeJS.ProcessEnv;
 }
 
-const WRITE_TOOLS = new Set(["write", "edit"]);
+const WRITE_TOOLS = new Set(["write", "edit", "notebook_edit"]);
 
 export function createProtectedPathsExtension(options: ProtectedPathsOptions = {}) {
 	return function protectedPathsExtension(pi: ExtensionAPI): void {

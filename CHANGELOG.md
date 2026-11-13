@@ -4,6 +4,7 @@
 
 ### Added
 
+- Jupyter notebooks, ported from the original OASIS: cell-by-cell `read` rendering and the `notebook_edit` tool (`src/tools/notebook.ts`), mapped to Claude Code's `NotebookEdit` for hooks and agent files, checked by the sandbox and protected paths. `OASIS_NOTEBOOK=0`.
 - Agent ignore files, ported from the original OASIS: `.oasisignore` plus Cursor, Devin, Windsurf, Gemini and Aider ignore files are honoured by file tools, listings, `lsp`, `ast_grep` and `repo_map` (`src/security/agent-ignore.ts`, `ignore`). `OASIS_AGENT_IGNORE=0`.
 - Structural search, ported from the original OASIS: the read-only `ast_grep` tool (`src/code/ast-grep.ts`) on `@ast-grep/napi` with Python, Go and Rust grammars, metavariable captures, globs, strictness, and rewrite previews returned as unique `edit` edits. `OASIS_AST_GREP=0`.
 - Language servers, ported from the original OASIS: the read-only `lsp` tool (`src/code/lsp.ts`, `vscode-jsonrpc`) with definition, references, hover, implementation, type definition, symbols, call hierarchy and diagnostics; built-in servers for 12 languages and custom `lspServers` in settings; project-local binaries only in trusted projects; waits for project loading so cross-file answers are complete; errors introduced by `write`/`edit` are appended to the tool result. `OASIS_LSP=0`, `OASIS_LSP_DIAGNOSTICS=0`.
