@@ -11,9 +11,10 @@
  */
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
+import { type IncomingFile, type InlineImage, receiveAttachments } from "./attachments.ts";
 
 export interface GatewaySession {
-	prompt(text: string): Promise<void>;
+	prompt(text: string, images?: InlineImage[]): Promise<void>;
 	steer(text: string): Promise<void>;
 	abort(): Promise<void>;
 	readonly isStreaming: boolean;
@@ -27,6 +28,7 @@ export interface GatewayMessage {
 	userId: string;
 	userName?: string;
 	text: string;
+	files?: IncomingFile[];
 }
 
 export interface GatewayOptions {
@@ -35,6 +37,8 @@ export interface GatewayOptions {
 	allowedUsers: string[];
 	/** Where chat-to-session mappings are kept. */
 	stateFile: string;
+	/** Workspace that attachments are saved into (.oasis/inbox). Default: process.cwd(). */
+	workspace?: string;
 	/** Opens a saved session (file) or starts a new one. */
 	openSession(chatKey: string, file?: string): Promise<GatewaySession>;
 	send(chatKey: string, text: string): Promise<void>;
@@ -89,8 +93,8 @@ export class ChatGateway {
 
 	async handle(message: GatewayMessage): Promise<void> {
 		const { chatKey } = message;
-		const text = message.text.trim();
-		if (!text) return;
+		let text = message.text.trim();
+		if (!text && !message.files?.length) return;
 		if (!this.allowed(message.userId)) {
 			this.log(`blocked ${message.userName ?? ""} (${message.userId}) in ${chatKey}`);
 			return this.options.send(
@@ -100,16 +104,22 @@ export class ChatGateway {
 		}
 		const command = /^[/!](new|reset|stop|status|help|start)(?:@\S+)?\s*$/i.exec(text)?.[1]?.toLowerCase();
 		if (command) return this.command(chatKey, command);
+		let images: InlineImage[] = [];
+		if (message.files?.length) {
+			const received = await receiveAttachments(this.options.workspace ?? process.cwd(), text, message.files, { log: (l) => this.log(l) });
+			text = received.text;
+			images = received.images;
+		}
 
 		if (this.busy.has(chatKey)) {
 			const running = this.sessions.get(chatKey);
-			if (running?.isStreaming) await running.steer(text);
+			if (running?.isStreaming && !images.length) await running.steer(text);
 			else this.pending.set(chatKey, [...(this.pending.get(chatKey) ?? []), text]);
 			return;
 		}
 		this.busy.add(chatKey);
 		try {
-			await this.run(chatKey, text);
+			await this.run(chatKey, text, images);
 			for (let next = this.takePending(chatKey); next; next = this.takePending(chatKey)) await this.run(chatKey, next);
 		} finally {
 			this.busy.delete(chatKey);
@@ -122,12 +132,12 @@ export class ChatGateway {
 		return queued?.length ? queued.join("\n\n") : undefined;
 	}
 
-	private async run(chatKey: string, text: string): Promise<void> {
+	private async run(chatKey: string, text: string, images: InlineImage[] = []): Promise<void> {
 		const session = await this.session(chatKey);
 		const typing = this.options.typing ? setInterval(() => void this.options.typing?.(chatKey).catch(() => {}), 4000) : undefined;
 		void this.options.typing?.(chatKey).catch(() => {});
 		try {
-			await session.prompt(text);
+			await session.prompt(text, images.length ? images : undefined);
 			const reply = session.getLastAssistantText()?.trim();
 			await this.options.send(chatKey, reply || "(no reply)");
 		} catch (error) {

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Gateway attachments: chat photos and files are saved to `.oasis/inbox`, and images are passed to the model.
 - Discord (discord.js) and Slack (Bolt, Socket Mode) adapters for `oasis gateway`.
 - `oasis gateway telegram`: chat with OASIS from Telegram (grammY), with an allowlist, a saved session per chat, steering and chat commands.
 - Skills Hub: `/skills add|find|update|remove` through the `skills` CLI (skills.sh), and cross-agent `.agents/skills` folders are loaded.

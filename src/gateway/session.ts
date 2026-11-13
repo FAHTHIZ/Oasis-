@@ -23,7 +23,7 @@ export function sessionOpener(cwd: string, agentDir: string) {
 		const { session } = await createAgentSession({ cwd, agentDir, resourceLoader, settingsManager, sessionManager });
 		await session.bindExtensions({ mode: "print" });
 		return {
-			prompt: (text) => session.prompt(text, { source: "rpc" }),
+			prompt: (text, images) => session.prompt(text, { source: "rpc", ...(images ? { images } : {}) }),
 			steer: async (text) => {
 				await session.steer(text);
 			},

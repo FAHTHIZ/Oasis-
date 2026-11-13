@@ -50,17 +50,42 @@ export function createSlackGateway(options: SlackGatewayOptions) {
 		},
 	});
 
-	const dispatch = (event: { channel: string; channel_type?: string; ts: string; thread_ts?: string; user?: string; text?: string }) => {
-		if (!event.user || !event.text) return;
+	type SlackFile = { name?: string; mimetype?: string; size?: number; url_private_download?: string; url_private?: string };
+	const dispatch = (event: {
+		channel: string;
+		channel_type?: string;
+		ts: string;
+		thread_ts?: string;
+		user?: string;
+		text?: string;
+		files?: SlackFile[];
+	}) => {
+		if (!event.user || (!event.text && !event.files?.length)) return;
+		const files = (event.files ?? []).flatMap((file) => {
+			const url = file.url_private_download ?? file.url_private;
+			if (!url) return [];
+			return [
+				{
+					name: file.name,
+					mime: file.mimetype,
+					size: file.size,
+					download: async () => {
+						const response = await fetch(url, { headers: { authorization: `Bearer ${options.botToken}` } });
+						if (!response.ok) throw new Error(`download failed: ${response.status}`);
+						return response.arrayBuffer();
+					},
+				},
+			];
+		});
 		void gateway
-			.handle({ chatKey: slackChatKey(event), userId: event.user, text: stripSlackMention(event.text, botUserId) })
+			.handle({ chatKey: slackChatKey(event), userId: event.user, text: stripSlackMention(event.text ?? "", botUserId), files })
 			.catch((error) => options.log?.(`[Slack] ${error instanceof Error ? error.message : String(error)}`));
 	};
 
 	app.event("app_mention", async ({ event }) => dispatch(event as Parameters<typeof dispatch>[0]));
 	app.message(async ({ message }) => {
 		const m = message as Parameters<typeof dispatch>[0] & { subtype?: string; bot_id?: string };
-		if (m.subtype || m.bot_id || m.channel_type !== "im") return;
+		if ((m.subtype && m.subtype !== "file_share") || m.bot_id || m.channel_type !== "im") return;
 		dispatch(m);
 	});
 

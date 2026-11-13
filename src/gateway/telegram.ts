@@ -8,6 +8,7 @@
  */
 import { join } from "node:path";
 import { Bot } from "grammy";
+import type { IncomingFile } from "./attachments.ts";
 import { ChatGateway, chunkText, type GatewaySession } from "./core.ts";
 
 export const TELEGRAM_MAX_MESSAGE = 4096;
@@ -28,8 +29,53 @@ export function addressedText(text: string, chatType: string, botUsername: strin
 	return replyToBot ? text : undefined;
 }
 
+interface TelegramFileRef {
+	file_id: string;
+	file_unique_id?: string;
+	file_size?: number;
+	file_name?: string;
+	mime_type?: string;
+}
+
+/** Photos (largest size), documents, videos, audio and voice notes; the Bot API serves files up to 20 MB. */
+export function telegramFiles(
+	message: {
+		photo?: TelegramFileRef[];
+		document?: TelegramFileRef;
+		video?: TelegramFileRef;
+		audio?: TelegramFileRef;
+		voice?: TelegramFileRef;
+	},
+	download: (fileId: string) => Promise<ArrayBuffer>,
+): IncomingFile[] {
+	const files: IncomingFile[] = [];
+	const best = message.photo?.at(-1);
+	if (best) {
+		files.push({
+			name: `photo-${(best.file_unique_id ?? best.file_id).slice(0, 16)}.jpg`,
+			mime: "image/jpeg",
+			size: best.file_size,
+			download: () => download(best.file_id),
+		});
+	}
+	for (const key of ["document", "video", "audio", "voice"] as const) {
+		const item = message[key];
+		if (!item) continue;
+		const fallback = key === "voice" ? "voice.ogg" : `${key}-${(item.file_unique_id ?? item.file_id).slice(0, 16)}`;
+		files.push({ name: item.file_name ?? fallback, mime: item.mime_type, size: item.file_size, download: () => download(item.file_id) });
+	}
+	return files;
+}
+
 export function createTelegramGateway(options: TelegramGatewayOptions) {
 	const bot = new Bot(options.token);
+	const download = async (fileId: string) => {
+		const file = await bot.api.getFile(fileId);
+		if (!file.file_path) throw new Error("Telegram returned no file path");
+		const response = await fetch(`https://api.telegram.org/file/bot${options.token}/${file.file_path}`);
+		if (!response.ok) throw new Error(`download failed: ${response.status}`);
+		return response.arrayBuffer();
+	};
 	const gateway = new ChatGateway({
 		platform: "Telegram",
 		allowedUsers: options.allowedUsers,
@@ -44,12 +90,20 @@ export function createTelegramGateway(options: TelegramGatewayOptions) {
 		},
 	});
 
-	bot.on("message:text", (ctx) => {
-		const text = addressedText(ctx.message.text, ctx.chat.type, ctx.me.username, ctx.message.reply_to_message?.from?.id === ctx.me.id);
-		if (text === undefined) return;
+	bot.on("message", (ctx) => {
+		const message = ctx.message;
+		const text = addressedText(
+			message.text ?? message.caption ?? "",
+			ctx.chat.type,
+			ctx.me.username,
+			message.reply_to_message?.from?.id === ctx.me.id,
+		);
+		const files = telegramFiles(message, (fileId) => download(fileId));
+		// In groups, attachments need a mention or reply in the caption too.
+		if (text === undefined || (!text && !files.length)) return;
 		// Do not block grammY's update loop on a long agent run.
 		void gateway
-			.handle({ chatKey: String(ctx.chat.id), userId: String(ctx.from.id), userName: ctx.from.username, text })
+			.handle({ chatKey: String(ctx.chat.id), userId: String(ctx.from.id), userName: ctx.from.username, text, files })
 			.catch((error) => options.log?.(`[Telegram] ${error instanceof Error ? error.message : String(error)}`));
 	});
 	bot.catch((error) => options.log?.(`[Telegram] ${error.message}`));

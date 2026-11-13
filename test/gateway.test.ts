@@ -110,3 +110,66 @@ describe("gateway adapters", () => {
 		expect(await gatewayCli(["irc"], {})).toBe(2);
 	});
 });
+
+describe("gateway attachments", () => {
+	const png = Buffer.from("89504e470d0a1a0a", "hex");
+
+	it("saves files to the inbox, inlines images and lists paths", async () => {
+		const { receiveAttachments, safeAttachmentName } = await import("../src/gateway/attachments.ts");
+		const root = mkdtempSync(join(tmpdir(), "inbox-"));
+		const result = await receiveAttachments(
+			root,
+			"",
+			[
+				{ name: "../shot.png", download: async () => png },
+				{ name: "spec.pdf", mime: "application/pdf", download: async () => Buffer.from("%PDF") },
+				{ name: "big.bin", size: 30 * 1024 * 1024, download: async () => Buffer.alloc(0) },
+				{ name: "bad.txt", download: async () => Promise.reject(new Error("boom")) },
+			],
+			{ now: new Date("2026-01-02T03:04:05Z") },
+		);
+		expect(safeAttachmentName("../a b.png")).toBe("a_b.png");
+		expect(result.images).toHaveLength(1);
+		expect(result.images[0]?.mimeType).toBe("image/png");
+		expect(result.saved.map((s) => s.path)).toEqual([".oasis/inbox/20260102-030405-shot.png", ".oasis/inbox/20260102-030405-spec.pdf"]);
+		expect(readFileSync(join(root, ".oasis/inbox/20260102-030405-spec.pdf"), "utf8")).toBe("%PDF");
+		expect(result.text).toContain("Look at the attached files");
+		expect(result.text).toContain("big.bin (over 20 MB)");
+		expect(result.text).toContain("bad.txt (download failed)");
+	});
+
+	it("collects Telegram photos and documents", async () => {
+		const { telegramFiles } = await import("../src/gateway/telegram.ts");
+		const files = telegramFiles(
+			{ photo: [{ file_id: "small" }, { file_id: "large", file_unique_id: "u1" }], document: { file_id: "d", file_name: "a.docx" } },
+			async (id) => new TextEncoder().encode(id).buffer as ArrayBuffer,
+		);
+		expect(files.map((f) => f.name)).toEqual(["photo-u1.jpg", "a.docx"]);
+		expect(Buffer.from((await files[0]!.download()) as ArrayBuffer).toString()).toBe("large");
+	});
+
+	it("passes images to the session", async () => {
+		const dir = mkdtempSync(join(tmpdir(), "gw-"));
+		let seen: unknown[] | undefined;
+		const gateway = new ChatGateway({
+			platform: "Test",
+			allowedUsers: ["*"],
+			stateFile: join(dir, "state.json"),
+			workspace: dir,
+			openSession: async () => ({
+				prompt: async (_text, images) => {
+					seen = images;
+				},
+				steer: async () => {},
+				abort: async () => {},
+				isStreaming: false,
+				getLastAssistantText: () => "ok",
+				sessionFile: undefined,
+				dispose: () => {},
+			}),
+			send: async () => {},
+		});
+		await gateway.handle({ chatKey: "c", userId: "1", text: "what is this", files: [{ name: "x.png", download: async () => png }] });
+		expect(seen).toHaveLength(1);
+	});
+});

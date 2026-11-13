@@ -66,6 +66,16 @@ export function createDiscordGateway(options: DiscordGatewayOptions) {
 				userId: message.author.id,
 				userName: message.author.username,
 				text: stripDiscordMention(message.content, botId),
+				files: [...message.attachments.values()].map((file) => ({
+					name: file.name,
+					mime: file.contentType ?? undefined,
+					size: file.size,
+					download: async () => {
+						const response = await fetch(file.url);
+						if (!response.ok) throw new Error(`download failed: ${response.status}`);
+						return response.arrayBuffer();
+					},
+				})),
 			})
 			.catch((error) => options.log?.(`[Discord] ${error instanceof Error ? error.message : String(error)}`));
 	});
