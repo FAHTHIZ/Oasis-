@@ -35,7 +35,16 @@ export interface SandboxExtensionOptions {
 	agentDir?: string;
 	/** Force a mode, ignoring flag, env and config (tests). */
 	mode?: SandboxMode;
+	/**
+	 * Subagent sessions: use the sandbox the main session started instead of
+	 * starting (and later resetting) one. sandbox-runtime is process-wide, so a
+	 * child that reset it would leave the parent's commands unsandboxed.
+	 */
+	inherit?: boolean;
 }
+
+/** The main session's sandbox, shared with subagents in the same process. */
+let mainState: SandboxState | undefined;
 
 export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 	return function sandboxExtension(pi: ExtensionAPI): void {
@@ -43,10 +52,11 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 		let uiContext: ExtensionContext | undefined;
 		const local = createLocalBashOperations();
 
-		pi.registerFlag("sandbox", {
-			description: `Sandbox for shell commands: ${SANDBOX_MODES.join(", ")} (default workspace-write)`,
-			type: "string",
-		});
+		if (!options.inherit)
+			pi.registerFlag("sandbox", {
+				description: `Sandbox for shell commands: ${SANDBOX_MODES.join(", ")} (default workspace-write)`,
+				type: "string",
+			});
 
 		const operations: BashOperations = {
 			async exec(command, cwd, execOptions) {
@@ -59,6 +69,11 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 
 		pi.on("session_start", async (_event, ctx) => {
 			uiContext = ctx;
+			if (options.inherit) {
+				if (mainState) Object.assign(state, { ...mainState, userAllowWrite: [...mainState.userAllowWrite] });
+				return;
+			}
+			mainState = state;
 			const user = loadUserSandboxConfig(options.agentDir ?? getAgentDir());
 			const flag = pi.getFlag("sandbox");
 			const fromFlag = typeof flag === "string" && flag ? parseMode(flag) : undefined;
@@ -97,6 +112,8 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 		});
 
 		pi.on("session_shutdown", async () => {
+			if (options.inherit) return;
+			if (mainState === state) mainState = undefined;
 			if (state.active) await SandboxManager.reset();
 			state.active = false;
 		});

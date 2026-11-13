@@ -5,6 +5,7 @@ import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
+import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
 import { createTurnGatesExtension } from "./turn-gates.ts";
@@ -22,7 +23,28 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
+		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
 		{ name: "oasis-checkpoints", factory: createCheckpointsExtension() },
+		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+	];
+}
+
+/**
+ * Extensions for a subagent at `depth`: the same safety, sandbox (shared
+ * with the main session), instructions and gates, but no memory (children
+ * don't see or edit the user's notes), no checkpoints (the main session
+ * snapshots before the prompt) and no todo list.
+ */
+export function subagentExtensions(depth: number): InlineExtension[] {
+	return [
+		{ name: "oasis-identity", factory: identityExtension },
+		{ name: "oasis-instructions", factory: createInstructionsExtension() },
+		{ name: "oasis-tool-repair", factory: toolRepairExtension },
+		{ name: "oasis-safety", factory: safetyExtension },
+		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
+		...(depth < MAX_DEPTH
+			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]
+			: []),
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
 	];
 }
