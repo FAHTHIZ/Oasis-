@@ -42,6 +42,17 @@ export {
 	type SandboxMode,
 	type UserSandboxConfig,
 } from "./sandbox/policy.ts";
+export { findRuleSecrets, secretRuleCount, shannonEntropy } from "./security/rules.ts";
+export {
+	defaultVault,
+	findSecrets,
+	findSecretsInDiff,
+	NO_UNMASK_TOOLS,
+	redactSecrets,
+	SECRET_SHIELD_NOTE,
+	SecretVault,
+	secretShieldEnabled,
+} from "./security/secrets.ts";
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
 export {

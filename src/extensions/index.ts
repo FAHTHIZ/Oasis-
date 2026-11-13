@@ -8,6 +8,7 @@ import { createPlanModeExtension } from "./plan-mode.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
+import { createSecretShieldExtension } from "./secret-shield.ts";
 import { createSkillsExtension } from "./skills.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { todoExtension } from "./todo.ts";
@@ -41,6 +42,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
 		{ name: "oasis-checkpoints", factory: createCheckpointsExtension() },
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+		// Last: masks what earlier tool_result handlers produced and unmasks arguments after hooks and safety saw them.
+		{ name: "oasis-secret-shield", factory: createSecretShieldExtension() },
 	];
 }
 
@@ -65,5 +68,6 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]
 			: []),
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+		{ name: "oasis-secret-shield", factory: createSecretShieldExtension() },
 	];
 }
