@@ -8,6 +8,7 @@ import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createCommandBangsExtension } from "./command-bangs.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
+import { createContextViewExtension } from "./context-view.ts";
 import { createCronExtension } from "./cron.ts";
 import { createDoctorExtension } from "./doctor.ts";
 import { createDocumentsExtension } from "./documents.ts";
@@ -112,6 +113,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-auto-commit", factory: createAutoCommitExtension() },
 		{ name: "oasis-review", factory: createReviewExtension() },
 		{ name: "oasis-command-bangs", factory: createCommandBangsExtension() },
+		{ name: "oasis-context-view", factory: createContextViewExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

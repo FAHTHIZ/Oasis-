@@ -41,6 +41,7 @@ export {
 } from "./code/lsp.ts";
 export { buildRepoMap, extractDefinitions, listSourceFiles, type RepoMap, type RepoMapOptions } from "./code/repo-map.ts";
 export { canCheckSyntax, checkFile, newProblems } from "./code/syntax-check.ts";
+export { buildBreakdown, formatBreakdown, tokenCounter } from "./context/breakdown.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
 export { type BreakerState, CircuitBreakers, PROVIDER_FAILURE } from "./core/circuit-breaker.ts";
@@ -104,6 +105,7 @@ export {
 export { createCommandBangsExtension } from "./extensions/command-bangs.ts";
 export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
+export { createContextViewExtension } from "./extensions/context-view.ts";
 export { createCronExtension } from "./extensions/cron.ts";
 export { createDoctorExtension } from "./extensions/doctor.ts";
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
