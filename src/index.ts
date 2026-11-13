@@ -8,6 +8,7 @@ export {
 	type Gate,
 	type GateFinding,
 	type GateInput,
+	openTodosGate,
 	runGates,
 	testTamperGate,
 	unverifiedEditsGate,
@@ -26,6 +27,7 @@ export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
+export { todoExtension } from "./extensions/todo.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
@@ -41,3 +43,14 @@ export {
 } from "./sandbox/policy.ts";
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
+export {
+	isOpen,
+	latestTodos,
+	MAX_TODOS,
+	normalizeTodos,
+	renderTodos,
+	TODO_STATUSES,
+	TodoError,
+	type TodoItem,
+	type TodoStatus,
+} from "./todo/list.ts";

@@ -15,6 +15,7 @@ import { isBashToolResult, isEditToolResult, isToolCallEventType, isWriteToolRes
 import { DEFAULT_GATES, type Gate, runGates } from "../core/gates.ts";
 import { TurnLedger } from "../core/ledger.ts";
 import { analyzeTestChange, isTestConfigPath, isTestPath } from "../core/test-tamper.ts";
+import { isOpen, type TodoDetails, type TodoItem } from "../todo/list.ts";
 
 export const GATE_REMINDER_TYPE = "oasis.gate-reminder";
 export const GATE_NOTICE_TYPE = "oasis.notice";
@@ -59,6 +60,8 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 		const reminded = new Set<string>();
 		const noticed = new Set<string>();
 		let continuations = 0;
+		/** The task list as last written during this request, if it was. */
+		let todos: readonly TodoItem[] | undefined;
 
 		pi.on("before_agent_start", (event) => {
 			if (event.messageType !== "user") return undefined;
@@ -67,6 +70,7 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 			reminded.clear();
 			noticed.clear();
 			continuations = 0;
+			todos = undefined;
 			return undefined;
 		});
 
@@ -80,6 +84,10 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 		});
 
 		pi.on("tool_result", (event) => {
+			if (event.toolName === "todo" && !event.isError) {
+				const written = (event.details as TodoDetails | undefined)?.todos;
+				if (Array.isArray(written)) todos = written;
+			}
 			if (isEditToolResult(event) || isWriteToolResult(event)) {
 				const path = String(event.input.path ?? event.input.file_path ?? "");
 				if (path) ledger.recordEdit(path, event.isError ? textOf(event.content) || "the edit failed" : undefined);
@@ -98,7 +106,7 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 			);
 			const reply = finalReply(event.context.contextMessages);
 			if (reply === undefined) return undefined;
-			const findings = runGates({ ledger, reply }, gates);
+			const findings = runGates({ ledger, reply, openTodos: todos?.filter(isOpen) }, gates);
 			if (findings.length === 0) return undefined;
 
 			const fresh = findings.find((f) => !reminded.has(f.gate));

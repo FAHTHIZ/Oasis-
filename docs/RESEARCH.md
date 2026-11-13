@@ -88,7 +88,7 @@ These came out of real failures in the old system and are being ported as pi ext
 | Empty final reply                                               | Done                                                                  |
 | Claiming a change whose edit failed                             | Done                                                                  |
 | Invented tool names                                             | Next                                                                  |
-| Open todo items at the end of a turn                            | Next                                                                  |
+| Open todo items at the end of a turn                            | Done; `todo` tool plus open-todos gate                                |
 | Test tampering detection                                        | Done; snapshot before first edit, jsdiff, "Tests weakened" notice     |
 | Standing corrections (user corrections remembered across turns) | Planned                                                               |
 | Plan mode                                                       | Planned                                                               |

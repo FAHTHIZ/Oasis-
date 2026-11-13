@@ -3,6 +3,8 @@
  * final reply with what the turn ledger recorded. Each gate is a pure
  * function so it can be unit-tested without a session.
  */
+
+import type { TodoItem } from "../todo/list.ts";
 import { admitsUnverified, claimedFailedEdits, claimsPassing } from "./claims.ts";
 import type { TurnLedger } from "./ledger.ts";
 import { userAllowsTestChanges } from "./test-tamper.ts";
@@ -11,6 +13,8 @@ export interface GateInput {
 	ledger: TurnLedger;
 	/** Text of the agent's final assistant message. */
 	reply: string;
+	/** Task-list items still pending or in progress, when the agent updated its list during this request. */
+	openTodos?: readonly TodoItem[];
 }
 
 export interface GateFinding {
@@ -82,6 +86,22 @@ export const unverifiedEditsGate: Gate = ({ ledger, reply }) => {
 	};
 };
 
+export const openTodosGate: Gate = ({ openTodos, reply }) => {
+	if (!openTodos?.length) return undefined;
+	// Stopping to ask the user something is a legitimate pause, not an abandoned plan.
+	if (/\?\s*$/.test(reply.trim())) return undefined;
+	const list = openTodos
+		.slice(0, 6)
+		.map((t) => `"${t.content}"`)
+		.join(", ");
+	const more = openTodos.length > 6 ? ` and ${openTodos.length - 6} more` : "";
+	return {
+		gate: "open-todos",
+		reminder: `Your task list still has ${openTodos.length} open item${openTodos.length === 1 ? "" : "s"}: ${list}${more}. Finish them now, or update the list (cancel items with a note saying why) and tell the user plainly what is left.`,
+		notice: `Not done: ${openTodos.length} task${openTodos.length === 1 ? "" : "s"} still open: ${list}${more}.`,
+	};
+};
+
 export const emptyReplyGate: Gate = ({ reply }) => {
 	if (reply.trim()) return undefined;
 	return {
@@ -96,6 +116,7 @@ export const DEFAULT_GATES: readonly Gate[] = [
 	failedEditClaimGate,
 	falsePassClaimGate,
 	unverifiedEditsGate,
+	openTodosGate,
 	emptyReplyGate,
 ];
 
