@@ -20,12 +20,14 @@
  * OASIS safety policy and sandbox still apply to the tool call itself: a
  * hook's "allow" cannot override them.
  */
+
 import type { CustomMessageEntryDraft, ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
 import { claudeToolName, fromClaudeInput, matcherNames, toClaudeInput, toolResponse } from "../hooks/claude.ts";
 import { type HookConfig, type HookEvent, type LoadedHooks, loadHooks, matchingHandlers } from "../hooks/config.ts";
 import { combine, type HookVerdict, runHooks } from "../hooks/run.ts";
 import { projectRoot } from "../memory/instructions.ts";
+import { currentPermissionMode } from "./plan-mode.ts";
 
 export const HOOK_CONTEXT_TYPE = "oasis.hook-context";
 export const HOOK_FEEDBACK_TYPE = "oasis.hook-feedback";
@@ -93,7 +95,7 @@ export function createHooksExtension(options: HooksOptions = {}) {
 				transcript_path: ctx.sessionManager.getSessionFile() ?? "",
 				cwd: ctx.cwd,
 				hook_event_name: event,
-				permission_mode: "default",
+				permission_mode: currentPermissionMode(),
 				...fields,
 			};
 			const runs = await runHooks(handlers, input, { cwd: ctx.cwd, projectDir: root, signal: ctx.signal, defaultTimeout });

@@ -99,7 +99,7 @@ describe("task tool", () => {
 		]);
 		await h.session.prompt("go");
 		const [explore, general] = seen;
-		expect(explore?.tools.sort()).toEqual(["find", "grep", "ls", "read"]);
+		expect(explore?.tools.sort()).toEqual(["bash", "find", "grep", "ls", "read"]);
 		expect(general?.tools).toEqual(expect.arrayContaining(["read", "bash", "edit", "write", "grep", "find", "ls"]));
 	});
 

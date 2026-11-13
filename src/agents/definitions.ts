@@ -34,11 +34,14 @@ export interface AgentDefinition {
 	/** "inherit", an alias such as "haiku", or "provider/model-id". */
 	model?: string;
 	maxTurns?: number;
+	/** Plan permission mode: bash is limited to read-only commands and edit/write are blocked. */
+	readOnly?: boolean;
 	source: AgentSource;
 	path?: string;
 }
 
-export const READ_ONLY_TOOLS = ["read", "grep", "find", "ls"];
+/** Read tools plus bash, which is limited to read-only commands for these agents. */
+export const READ_ONLY_TOOLS = ["bash", "find", "grep", "ls", "read"];
 /** Tools every general agent gets on top of pi's defaults. */
 export const GENERAL_EXTRA_TOOLS = ["grep", "find", "ls"];
 
@@ -53,10 +56,11 @@ export const BUILTIN_AGENTS: AgentDefinition[] = [
 	{
 		name: "explore",
 		description:
-			"Fast read-only agent for finding things in the codebase: where something is defined or used, how a feature works, which files matter. Say how thorough to be (quick, medium, very thorough). It cannot edit files or run commands.",
+			"Fast read-only agent for finding things in the codebase: where something is defined or used, how a feature works, which files matter. Say how thorough to be (quick, medium, very thorough). It cannot edit files and can only run read-only shell commands.",
 		prompt:
 			"You are a read-only explorer. Search broadly first (grep, find), then read the relevant parts. Do not guess: report only what you saw, with file paths and line numbers. Match the thoroughness the task asks for. End with a concise answer to the question, then the key files and what each contains.",
 		tools: READ_ONLY_TOOLS,
+		readOnly: true,
 		source: "builtin",
 	},
 	{
@@ -66,6 +70,7 @@ export const BUILTIN_AGENTS: AgentDefinition[] = [
 		prompt:
 			"You are a software architect. Read the code needed to understand the change, then return a concrete plan: numbered steps, each naming the files and functions to touch, plus edge cases, risks and the commands that will verify the work. Do not write code beyond short illustrative snippets.",
 		tools: READ_ONLY_TOOLS,
+		readOnly: true,
 		source: "builtin",
 	},
 ];
@@ -135,6 +140,7 @@ export function parseAgentFile(path: string, source: AgentSource): AgentDefiniti
 		disallowedTools: toolList(fm.disallowedTools ?? fm.disallowed_tools),
 		model: typeof fm.model === "string" ? fm.model.trim() : undefined,
 		maxTurns: Number.isFinite(maxTurns) && maxTurns > 0 ? Math.floor(maxTurns) : undefined,
+		readOnly: fm.permissionMode === "plan" || fm.permission_mode === "plan" || undefined,
 		source,
 		path,
 	};

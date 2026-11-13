@@ -4,6 +4,7 @@ import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createPlanModeExtension } from "./plan-mode.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
@@ -26,6 +27,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-reliability", factory: createReliabilityExtension() },
 		// Claude Code hooks: PreToolUse may rewrite input, so it runs before safety and sandbox check the call.
 		{ name: "oasis-hooks", factory: createHooksExtension() },
+		// Plan mode blocks changes before safety and sandbox prompt for them.
+		{ name: "oasis-plan-mode", factory: createPlanModeExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },

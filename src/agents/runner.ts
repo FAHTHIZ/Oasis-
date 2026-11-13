@@ -3,6 +3,7 @@
  * its own context window, the OASIS safety extensions, and the agent's tool
  * set and system prompt. Only its final message comes back.
  */
+
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import type { Model } from "@earendil-works/pi-ai";
 import {
@@ -14,6 +15,7 @@ import {
 	SessionManager,
 	SettingsManager,
 } from "@earendil-works/pi-coding-agent";
+import { planModeBlock } from "../extensions/plan-mode.ts";
 import { type AgentDefinition, GENERAL_EXTRA_TOOLS } from "./definitions.ts";
 import { extractJson, type JsonSchema, validateJson } from "./schema.ts";
 
@@ -75,6 +77,17 @@ function describeTool(name: string, args: Record<string, unknown>): string {
 	return typeof arg === "string" ? `${name} ${arg.length > 60 ? `${arg.slice(0, 57)}...` : arg}` : name;
 }
 
+/** Read-only agents (explore, plan, permissionMode: plan) get plan-mode rules on every call. */
+const readOnlyGuard: InlineExtension = {
+	name: "oasis-subagent-read-only",
+	factory: (pi) => {
+		pi.on("tool_call", (event) => {
+			const reason = planModeBlock(event.toolName, event.input as Record<string, unknown>);
+			return reason ? { block: true, reason: reason.replace("Plan mode", "This agent is read-only") } : undefined;
+		});
+	},
+};
+
 export async function runSubagent(req: SubagentRequest): Promise<SubagentResult> {
 	const maxTurns = req.agent.maxTurns ?? req.maxTurns ?? DEFAULT_MAX_TURNS;
 	const settingsManager = req.settingsManager ?? SettingsManager.create(req.cwd, req.agentDir);
@@ -91,7 +104,7 @@ export async function runSubagent(req: SubagentRequest): Promise<SubagentResult>
 		cwd: req.cwd,
 		agentDir: req.agentDir,
 		settingsManager,
-		extensionFactories: [...req.extensions, section],
+		extensionFactories: [...req.extensions, section, ...(req.agent.readOnly ? [readOnlyGuard] : [])],
 		noPromptTemplates: true,
 		noThemes: true,
 		...(req.isolatedResources ? { noSkills: true, noContextFiles: true } : {}),
