@@ -7,7 +7,7 @@
  * @mentions; each DM and each channel gets its own session.
  */
 import { join } from "node:path";
-import { Client, Events, GatewayIntentBits, Partials } from "discord.js";
+import { AttachmentBuilder, Client, Events, GatewayIntentBits, Partials } from "discord.js";
 import { ChatGateway, chunkText, type GatewaySession } from "./core.ts";
 
 export const DISCORD_MAX_MESSAGE = 2000;
@@ -48,6 +48,10 @@ export function createDiscordGateway(options: DiscordGatewayOptions) {
 		send: async (chatKey, text) => {
 			const target = await channel(chatKey);
 			for (const chunk of chunkText(text, DISCORD_MAX_MESSAGE)) await target.send(chunk);
+		},
+		sendVoice: async (chatKey, audio, name) => {
+			const target = await channel(chatKey);
+			await target.send({ files: [new AttachmentBuilder(Buffer.from(audio), { name })] });
 		},
 		typing: async (chatKey) => {
 			const target = await channel(chatKey);

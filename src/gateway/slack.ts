@@ -48,6 +48,11 @@ export function createSlackGateway(options: SlackGatewayOptions) {
 				await app.client.chat.postMessage({ channel: channel ?? chatKey, text: chunk, ...(thread_ts ? { thread_ts } : {}) });
 			}
 		},
+		sendVoice: async (chatKey, audio, name) => {
+			const [channel, thread_ts] = chatKey.split(":");
+			const file = { channel_id: channel ?? chatKey, file: Buffer.from(audio), filename: name };
+			await app.client.files.uploadV2(thread_ts ? { ...file, thread_ts } : file);
+		},
 	});
 
 	type SlackFile = { name?: string; mimetype?: string; size?: number; url_private_download?: string; url_private?: string };

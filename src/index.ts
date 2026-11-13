@@ -141,6 +141,7 @@ export {
 } from "./gateway/core.ts";
 export { createDiscordGateway, DISCORD_MAX_MESSAGE, stripDiscordMention } from "./gateway/discord.ts";
 export { createSlackGateway, SLACK_MAX_MESSAGE, slackChatKey, stripSlackMention } from "./gateway/slack.ts";
+export { createSpeaker, speakableText, speakerConfig, speakerFromEnv } from "./gateway/speak.ts";
 export { addressedText, createTelegramGateway, TELEGRAM_MAX_MESSAGE } from "./gateway/telegram.ts";
 export { createTranscriber, isAudio, type Transcriber, transcriberConfig, transcriberFromEnv } from "./gateway/transcribe.ts";
 export {

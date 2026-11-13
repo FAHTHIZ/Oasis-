@@ -12,6 +12,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { type IncomingFile, type InlineImage, receiveAttachments } from "./attachments.ts";
+import { type Speaker, speakerFromEnv } from "./speak.ts";
 import { type Transcriber, transcriberFromEnv } from "./transcribe.ts";
 
 export interface GatewaySession {
@@ -47,6 +48,10 @@ export interface GatewayOptions {
 	log?(line: string): void;
 	/** Turns voice notes into text. Default: from OASIS_TRANSCRIBE; null turns it off. */
 	transcribe?: Transcriber | null;
+	/** Sends audio as a voice note. Adapters without it never get spoken replies. */
+	sendVoice?(chatKey: string, audio: Uint8Array, name: string, mime: string): Promise<void>;
+	/** Speaks replies. Default: from OASIS_TTS; null turns it off. */
+	speak?: { speak: Speaker; reply: "voice" | "always" } | null;
 }
 
 export const GATEWAY_HELP = [
@@ -87,10 +92,14 @@ export class ChatGateway {
 	private files: Record<string, string>;
 
 	private transcribe: Transcriber | undefined;
+	private speaker: { speak: Speaker; reply: "voice" | "always" } | undefined;
+	/** Chats whose latest message was a voice note. */
+	private voiceChats = new Set<string>();
 
 	constructor(private readonly options: GatewayOptions) {
 		this.files = this.loadState();
 		this.transcribe = options.transcribe === undefined ? transcriberFromEnv() : (options.transcribe ?? undefined);
+		this.speaker = options.speak === undefined ? speakerFromEnv() : (options.speak ?? undefined);
 	}
 
 	allowed(userId: string): boolean {
@@ -111,6 +120,7 @@ export class ChatGateway {
 		const command = /^[/!](new|reset|stop|status|help|start)(?:@\S+)?\s*$/i.exec(text)?.[1]?.toLowerCase();
 		if (command) return this.command(chatKey, command);
 		let images: InlineImage[] = [];
+		let heardVoice = false;
 		if (message.files?.length) {
 			const received = await receiveAttachments(this.options.workspace ?? process.cwd(), text, message.files, {
 				log: (l) => this.log(l),
@@ -118,7 +128,10 @@ export class ChatGateway {
 			});
 			text = received.text;
 			images = received.images;
+			heardVoice = received.saved.some((item) => item.transcript);
 		}
+		if (heardVoice) this.voiceChats.add(chatKey);
+		else this.voiceChats.delete(chatKey);
 
 		if (this.busy.has(chatKey)) {
 			const running = this.sessions.get(chatKey);
@@ -149,11 +162,24 @@ export class ChatGateway {
 			await session.prompt(text, images.length ? images : undefined);
 			const reply = session.getLastAssistantText()?.trim();
 			await this.options.send(chatKey, reply || "(no reply)");
+			if (reply) await this.speakReply(chatKey, reply);
 		} catch (error) {
 			await this.options.send(chatKey, `Error: ${error instanceof Error ? error.message : String(error)}`);
 		} finally {
 			if (typing) clearInterval(typing);
 			this.remember(chatKey, session);
+		}
+	}
+
+	private async speakReply(chatKey: string, reply: string): Promise<void> {
+		const { speaker } = this;
+		if (!speaker || !this.options.sendVoice) return;
+		if (speaker.reply === "voice" && !this.voiceChats.has(chatKey)) return;
+		try {
+			const { audio, name, mime } = await speaker.speak(reply);
+			await this.options.sendVoice(chatKey, audio, name, mime);
+		} catch (error) {
+			this.log(`spoken reply failed: ${error instanceof Error ? error.message : String(error)}`);
 		}
 	}
 

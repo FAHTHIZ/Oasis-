@@ -7,7 +7,7 @@
  * per user; in groups the bot answers when mentioned or replied to.
  */
 import { join } from "node:path";
-import { Bot } from "grammy";
+import { Bot, InputFile } from "grammy";
 import type { IncomingFile } from "./attachments.ts";
 import { ChatGateway, chunkText, type GatewaySession } from "./core.ts";
 
@@ -84,6 +84,9 @@ export function createTelegramGateway(options: TelegramGatewayOptions) {
 		log: options.log,
 		send: async (chatKey, text) => {
 			for (const chunk of chunkText(text, TELEGRAM_MAX_MESSAGE)) await bot.api.sendMessage(Number(chatKey), chunk);
+		},
+		sendVoice: async (chatKey, audio, name) => {
+			await bot.api.sendVoice(Number(chatKey), new InputFile(audio, name));
 		},
 		typing: async (chatKey) => {
 			await bot.api.sendChatAction(Number(chatKey), "typing");
