@@ -87,3 +87,32 @@ describe("plugin inline commands", () => {
 		);
 	});
 });
+
+describe("plugin userConfig", () => {
+	it("fills ${user_config.KEY}, exports CLAUDE_PLUGIN_OPTION_* and flags missing required options", async () => {
+		const { readPluginOptions, setPluginOption } = await import("../src/plugins/active.ts");
+		const root = mkdtempSync(join(tmpdir(), "plug-"));
+		mkdirSync(join(root, ".claude-plugin"));
+		writeFileSync(
+			join(root, ".claude-plugin", "plugin.json"),
+			JSON.stringify({
+				name: "p",
+				userConfig: { region: { type: "string", default: "eu" }, token: { type: "string", required: true, sensitive: true } },
+				mcpServers: { api: { command: "srv", args: ["--region", "${user_config.region}"] } },
+			}),
+		);
+		const missing = loadPluginComponents(root, { id: "p@m" });
+		expect(missing.warnings[0]).toContain("/plugin config p@m token");
+		const c = loadPluginComponents(root, { userConfig: { token: "t0k" } });
+		expect(c.mcpServers.api).toEqual({
+			command: "srv",
+			args: ["--region", "eu"],
+			env: { CLAUDE_PLUGIN_OPTION_REGION: "eu", CLAUDE_PLUGIN_OPTION_TOKEN: "t0k" },
+		});
+		const agentDir = mkdtempSync(join(tmpdir(), "agent-"));
+		setPluginOption(agentDir, "p@m", "token", "abc");
+		expect(readPluginOptions(agentDir)).toEqual({ "p@m": { token: "abc" } });
+		setPluginOption(agentDir, "p@m", "token", undefined);
+		expect(readPluginOptions(agentDir)).toEqual({ "p@m": {} });
+	});
+});

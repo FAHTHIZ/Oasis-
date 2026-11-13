@@ -13,7 +13,7 @@
 import { delimiter } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { convertClaudeServer, safeServerName } from "../mcp/claude.ts";
-import { activePluginComponents } from "../plugins/active.ts";
+import { activePluginComponents, readPluginOptions, setPluginOption } from "../plugins/active.ts";
 import { PluginStore } from "../plugins/store.ts";
 
 export const PLUGIN_USAGE = [
@@ -23,6 +23,7 @@ export const PLUGIN_USAGE = [
 	"/plugin marketplace list|update <name>|remove <name>",
 	"/plugin install <name>[@<marketplace>]",
 	"/plugin enable|disable|uninstall <name>",
+	"/plugin config <name> [key [value|--unset]]  plugin options (userConfig)",
 ].join("\n");
 
 export interface PluginsOptions {
@@ -86,7 +87,7 @@ export function createPluginsExtension(options: PluginsOptions = {}) {
 		pi.registerCommand("plugin", {
 			description: "Claude Code plugins: /plugin marketplace add <owner/repo>, install <name>, list, enable, disable, uninstall",
 			getArgumentCompletions: (prefix: string) =>
-				["list", "available", "install", "enable", "disable", "uninstall", "marketplace"]
+				["list", "available", "install", "enable", "disable", "uninstall", "marketplace", "config"]
 					.filter((s) => s.startsWith(prefix.trim()))
 					.map((s) => ({ value: s, label: s })),
 			handler: async (args, ctx) => {
@@ -153,6 +154,28 @@ export function createPluginsExtension(options: PluginsOptions = {}) {
 						case "disable":
 							if (!rest[0]) break;
 							return reload(`${sub === "enable" ? "Enabled" : "Disabled"} ${s.setEnabled(rest[0], sub === "enable").id}.`);
+						case "config": {
+							const [id, key, ...value] = rest;
+							const plugin = active().find((p) => p.id === id || p.name === id);
+							if (!plugin)
+								return ctx.ui.notify(id ? `No enabled plugin ${id}.` : "Usage: /plugin config <plugin> [key [value|--unset]]", "warning");
+							const fields = Object.entries(plugin.options);
+							if (!key) {
+								const saved = readPluginOptions(agentDir())[plugin.id] ?? {};
+								const lines = fields.map(([k, f]) => {
+									const v = saved[k] ?? (f.default === undefined ? undefined : String(f.default));
+									const shown = v === undefined ? "(not set)" : f.sensitive ? "••••" : v;
+									return `  ${k}${f.required ? " (required)" : ""}: ${shown}${f.description ? `  ${f.description}` : ""}`;
+								});
+								return ctx.ui.notify(fields.length ? `${plugin.id} options:\n${lines.join("\n")}` : `${plugin.id} has no options.`, "info");
+							}
+							if (!plugin.options[key]) return ctx.ui.notify(`${plugin.id} has no option ${key}.`, "warning");
+							let text = value.join(" ");
+							if (!text && ctx.hasUI) text = (await ctx.ui.input(`${plugin.id}: ${plugin.options[key].title ?? key}`, "")) ?? "";
+							if (!text) return ctx.ui.notify(`Usage: /plugin config ${plugin.id} ${key} <value|--unset>`, "warning");
+							setPluginOption(agentDir(), plugin.id, key, text === "--unset" ? undefined : text);
+							return reload(`${text === "--unset" ? "Cleared" : "Set"} ${plugin.id} option ${key}.`);
+						}
 						case "uninstall":
 						case "remove":
 							if (!rest[0]) break;

@@ -19,6 +19,7 @@ export interface PluginManifest {
 	mcpServers?: unknown;
 	lspServers?: unknown;
 	outputStyles?: unknown;
+	userConfig?: unknown;
 }
 
 export interface PluginComponents {
@@ -42,6 +43,8 @@ export interface PluginComponents {
 	outputStyles: string[];
 	/** bin/ directory, put on the shell's PATH while the plugin is enabled. */
 	bin?: string;
+	/** The manifest's userConfig fields. */
+	options: Record<string, PluginOptionField>;
 	warnings: string[];
 }
 
@@ -59,11 +62,12 @@ export function readManifest(root: string): PluginManifest | undefined {
 }
 
 /** Replace ${CLAUDE_PLUGIN_ROOT} (and ${CLAUDE_PLUGIN_DATA}) in every string inside a JSON value. */
-export function expandPluginVars<T>(value: T, root: string, data?: string): T {
+export function expandPluginVars<T>(value: T, root: string, data?: string, options: Record<string, string> = {}): T {
 	const walk = (v: unknown): unknown => {
 		if (typeof v === "string") {
 			let out = v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root).replace(/\$CLAUDE_PLUGIN_ROOT\b/g, root);
 			if (data) out = out.replaceAll("${CLAUDE_PLUGIN_DATA}", data);
+			out = out.replace(/\$\{user_config\.([\w.-]+)\}/g, (all, key: string) => options[key] ?? all);
 			return out;
 		}
 		if (Array.isArray(v)) return v.map(walk);
@@ -94,10 +98,46 @@ function mdFiles(path: string): string[] {
 	}
 }
 
-export function loadPluginComponents(root: string, options: { dataDir?: string } = {}): PluginComponents {
+/** Environment name Claude Code exports a plugin option under. */
+export const pluginOptionEnv = (key: string) => `CLAUDE_PLUGIN_OPTION_${key.replace(/[^A-Za-z0-9]+/g, "_").toUpperCase()}`;
+
+export interface PluginOptionField {
+	type?: string;
+	title?: string;
+	description?: string;
+	default?: unknown;
+	required?: boolean;
+	sensitive?: boolean;
+}
+
+export function loadPluginComponents(
+	root: string,
+	options: { dataDir?: string; userConfig?: Record<string, string>; id?: string } = {},
+): PluginComponents {
 	const manifest = readManifest(root) ?? {};
 	const warnings: string[] = [];
 	const name = (typeof manifest.name === "string" && manifest.name) || basename(root);
+	// userConfig: values set with /plugin config, falling back to defaults.
+	const fields =
+		manifest.userConfig && typeof manifest.userConfig === "object" && !Array.isArray(manifest.userConfig)
+			? (manifest.userConfig as Record<string, PluginOptionField>)
+			: {};
+	const optionValues: Record<string, string> = {};
+	for (const [key, field] of Object.entries(fields)) {
+		const value = options.userConfig?.[key] ?? (field?.default === undefined ? undefined : String(field.default));
+		if (value !== undefined) optionValues[key] = value;
+		else if (field?.required)
+			warnings.push(`${name}: needs option ${key}; set it with /plugin config ${options.id ?? name} ${key} <value>`);
+	}
+	const optionEnv = Object.fromEntries(Object.entries(optionValues).map(([k, v]) => [pluginOptionEnv(k), v]));
+	const withOptionEnv = (servers: Record<string, unknown>) =>
+		Object.fromEntries(
+			Object.entries(servers).map(([key, server]) => {
+				if (!Object.keys(optionEnv).length || !server || typeof server !== "object" || !("command" in server)) return [key, server];
+				const own = (server as { env?: Record<string, string> }).env ?? {};
+				return [key, { ...server, env: { ...optionEnv, ...own } }];
+			}),
+		);
 	const paths = (key: string, value: unknown): string[] =>
 		asList(value).flatMap((p) => {
 			if (typeof p !== "string") return [];
@@ -221,9 +261,10 @@ export function loadPluginComponents(root: string, options: { dataDir?: string }
 		skills,
 		commands,
 		agents,
-		hooks: hooks.map((h) => ({ source: h.source, hooks: expandPluginVars(h.hooks, root, options.dataDir) })),
-		mcpServers: expandPluginVars(mcpServers, root, options.dataDir),
-		lspServers: expandPluginVars(lspServers, root, options.dataDir),
+		hooks: hooks.map((h) => ({ source: h.source, hooks: expandPluginVars(h.hooks, root, options.dataDir, optionValues) })),
+		mcpServers: withOptionEnv(expandPluginVars(mcpServers, root, options.dataDir, optionValues)),
+		lspServers: withOptionEnv(expandPluginVars(lspServers, root, options.dataDir, optionValues)),
+		options: fields,
 		outputStyles,
 		...(bin ? { bin } : {}),
 		warnings,
