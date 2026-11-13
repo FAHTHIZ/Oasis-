@@ -10,6 +10,7 @@ export {
 } from "./agents/worktrees.ts";
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
 export { type AiComment, AiCommentScanner, buildAiCommentPrompt, findAiComments } from "./code/ai-comments.ts";
+export { PatchError, type PatchOperation, patchFromToolCall, planPatch } from "./code/apply-patch.ts";
 export { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./code/ast.ts";
 export {
 	AST_GREP_STRICTNESS,
@@ -229,5 +230,6 @@ export {
 	readNotebook,
 	renderNotebook,
 } from "./tools/notebook.ts";
+export { expandPatchCall } from "./tools/patch-calls.ts";
 export { type RepairedCall, repairToolCall, unknownToolMessage } from "./tools/repair.ts";
 export { ensureScratch, isScratchPath, SCRATCH_ROOT, scratchKey, scratchPrompt } from "./workspace/scratch.ts";
