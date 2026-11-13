@@ -4,6 +4,7 @@
 
 ### Added
 
+- `ask_user_question` (Claude Code AskUserQuestion) with a per-prompt question budget.
 - Background shell commands (Claude Code run_in_background/BashOutput/KillShell): `bash` `run_in_background`, `bash_output`, `kill_shell`, `/bashes`.
 - `oasis acp`: Agent Client Protocol server for Zed, JetBrains and other ACP editors, built on the open-source pi-acp adapter.
 - `/goal` and `--goal`: work until a strict reviewer says a condition holds (original OASIS, Codex /goal).

@@ -37,6 +37,7 @@ const READ_TOOLS = new Set([
 	"todo",
 	"exit_plan_mode",
 	// Reading or stopping the agent's own background commands changes nothing in the workspace.
+	"ask_user_question",
 	"bash_output",
 	"kill_shell",
 ]);

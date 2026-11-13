@@ -1,6 +1,7 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
 import { createAgentIgnoreExtension } from "./agent-ignore.ts";
 import { createAiCommentsExtension } from "./ai-comments.ts";
+import { createAskUserExtension } from "./ask-user.ts";
 import { createAstGrepExtension } from "./ast-grep.ts";
 import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
@@ -72,6 +73,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-package-vetting", factory: createPackageVettingExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
+		// Multiple-choice questions for decisions only the user can make (capped per prompt).
+		{ name: "oasis-ask-user", factory: createAskUserExtension() },
 		// web_fetch, web_search and the untrusted-content guard.
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
