@@ -43,7 +43,7 @@ const step =
 		return reply(s);
 	};
 
-async function setup(script: FauxResponseStep[], opts: { trustProjectAgents?: boolean } = {}) {
+async function setup(script: FauxResponseStep[], opts: { trustProjectAgents?: boolean; ui?: Record<string, unknown> } = {}) {
 	seen.length = 0;
 	let agentDir = "";
 	const ext = (pi: Parameters<ReturnType<typeof createSubagentExtension>>[0]) =>
@@ -54,7 +54,7 @@ async function setup(script: FauxResponseStep[], opts: { trustProjectAgents?: bo
 			isolatedResources: true,
 			trustProjectAgents: opts.trustProjectAgents,
 		})(pi);
-	harness = await createHarness([{ name: "oasis-subagents", factory: ext }], script);
+	harness = await createHarness([{ name: "oasis-subagents", factory: ext }], script, { ui: opts.ui });
 	agentDir = join(harness.cwd, ".oasis-agent");
 	return harness;
 }
@@ -69,6 +69,43 @@ const taskResult = (h: Harness) => {
 };
 
 describe("task tool", () => {
+	it("runs a background task and delivers its report as a follow-up message", async () => {
+		const notes: string[] = [];
+		const h = await setup(
+			[
+				tool("task", { prompt: "Count files", description: "count", run_in_background: true }),
+				// Main and child calls may interleave, so every step answers by context.
+				...[1, 2, 3].map(() =>
+					step((s) =>
+						say(
+							s.messages.includes("Background task agent_1 (count) done")
+								? "Got the report."
+								: s.messages.includes('"text":"go"')
+									? "Started it; waiting."
+									: "There are 3 files.",
+						),
+					),
+				),
+			],
+			{ ui: { notify: (m: string) => notes.push(m) } },
+		);
+		await h.session.prompt("go");
+		await new Promise((r) => setTimeout(r, 50));
+		await h.session.waitForIdle();
+		expect(taskResult(h)?.content[0]?.text).toContain("Started agent_1 (count) in the background");
+		expect(h.session.getLastAssistantText()).toBe("Got the report.");
+	});
+
+	it("runs run_in_background tasks in the foreground when nobody can receive a late report", async () => {
+		const h = await setup([
+			tool("task", { prompt: "Count files", description: "count", run_in_background: true }),
+			step(() => say("There are 3 files.")),
+			step(() => say("Done.")),
+		]);
+		await h.session.prompt("go");
+		expect(taskResult(h)?.content[0]?.text).toContain("There are 3 files.");
+	});
+
 	it("runs one subagent and returns only its final report", async () => {
 		const h = await setup([
 			tool("task", { prompt: "Find the answer", subagent_type: "explore", description: "find answer" }),

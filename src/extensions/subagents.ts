@@ -31,7 +31,7 @@ import {
 	type ModelRuntime,
 	type SettingsManager,
 } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
+import { type Static, Type } from "typebox";
 import { type AgentDefinition, discoverAgents } from "../agents/definitions.ts";
 import { runSubagent, type SubagentResult } from "../agents/runner.ts";
 import type { JsonSchema } from "../agents/schema.ts";
@@ -129,6 +129,26 @@ function formatResult(r: SubagentResult, label: string): string {
 	return `${head}\n${body}`;
 }
 
+export const BACKGROUND_TASK_TYPE = "oasis-background-task";
+
+interface BackgroundTask {
+	id: string;
+	label: string;
+	started: number;
+	ended?: number;
+	status: "running" | "done" | "failed" | "stopped";
+	output?: string;
+	/** The report reached the model (task_output or the completion message). */
+	collected?: boolean;
+	controller: AbortController;
+	done: Promise<void>;
+}
+
+function describeTask(job: BackgroundTask): string {
+	const secs = Math.round(((job.ended ?? Date.now()) - job.started) / 1000);
+	return `${job.id} [${job.status} ${secs}s] ${job.label}`;
+}
+
 export function createSubagentExtension(options: SubagentOptions) {
 	const depth = options.depth ?? 0;
 	return (pi: ExtensionAPI) => {
@@ -170,6 +190,129 @@ export function createSubagentExtension(options: SubagentOptions) {
 			description: Type.Optional(Type.String({ description: "3-5 word label shown to the user." })),
 		};
 
+		const taskParameters = Type.Object({
+			...taskShape,
+			prompt: Type.Optional(taskShape.prompt),
+			tasks: Type.Optional(
+				Type.Array(Type.Object(taskShape), {
+					description: `Up to ${MAX_PARALLEL_TASKS} independent tasks to run in parallel. Use instead of prompt.`,
+					maxItems: MAX_PARALLEL_TASKS,
+				}),
+			),
+			output_schema: Type.Optional(
+				Type.Record(Type.String(), Type.Unknown(), {
+					description: "JSON Schema the final reply must match; the reply is checked and the agent gets one chance to fix it.",
+				}),
+			),
+			model: Type.Optional(Type.String({ description: "Model override: inherit, an alias such as haiku, or provider/model-id." })),
+			thoroughness: Type.Optional(StringEnum(["quick", "medium", "very thorough"] as const)),
+			isolation: Type.Optional(
+				StringEnum(["worktree"] as const, {
+					description:
+						"worktree: each agent works in its own git worktree and branch, so parallel agents can edit without touching the user's checkout. Its changes come back as a commit on that branch.",
+				}),
+			),
+			run_in_background: Type.Optional(
+				Type.Boolean({
+					description:
+						"Start the task(s) and return at once; keep working while they run. The report arrives as a message when they finish (or read it with task_output).",
+				}),
+			),
+		});
+		type TaskParams = Static<typeof taskParameters>;
+		const backgroundTasks = new Map<string, BackgroundTask>();
+		let nextBackground = 1;
+		async function runBatch(
+			params: TaskParams,
+			signal: AbortSignal | undefined,
+			onUpdate: ((r: ReturnType<typeof text>) => void) | undefined,
+			ctx: ExtensionContext,
+		) {
+			const specs: TaskSpec[] = params.tasks?.length
+				? params.tasks
+				: params.prompt
+					? [{ prompt: params.prompt, subagent_type: params.subagent_type, description: params.description }]
+					: [];
+			if (specs.length === 0) throw new Error("task: pass prompt, or tasks for a parallel batch.");
+			if (specs.length > MAX_PARALLEL_TASKS) throw new Error(`task: at most ${MAX_PARALLEL_TASKS} tasks per call.`);
+			// Re-read definitions so agents added mid-session are usable.
+			load(ctx);
+			const modelRuntime = runtimeOf(ctx, options);
+			if (!modelRuntime) throw new Error("task: subagents are not available in this session (no model runtime).");
+
+			const resolved = specs.map((spec) => {
+				const name = (spec.subagent_type ?? "general").trim().toLowerCase();
+				const agent = agents.get(name);
+				if (!agent) throw new Error(`task: unknown subagent_type "${name}". Available: ${[...agents.keys()].join(", ")}.`);
+				const model = resolveModel(ctx, params.model ?? agent.model);
+				if (!model) throw new Error("task: no model is selected.");
+				return { spec, agent, model };
+			});
+
+			const status = specs.map(() => "starting");
+			const report = () =>
+				onUpdate?.(
+					text(resolved.map((r, i) => `${r.agent.name}${r.spec.description ? ` (${r.spec.description})` : ""}: ${status[i]}`).join("\n")),
+				);
+			report();
+
+			const results = await mapLimit(resolved, TASK_CONCURRENCY, async ({ spec, agent, model }, i) => {
+				let prompt = params.thoroughness ? `${spec.prompt}\n\nThoroughness: ${params.thoroughness}.` : spec.prompt;
+				let cwd = ctx.cwd;
+				let worktree: Worktree | undefined;
+				let top: string | undefined;
+				if ((params.isolation ?? agent.isolation) === "worktree" && !agent.readOnly) {
+					top = await gitTopLevel(ctx.cwd, options.env);
+					if (!top) throw new Error('task: isolation "worktree" needs a git repository.');
+					status[i] = "creating worktree";
+					report();
+					worktree = await createWorktree(top, spec.description || agent.name, {
+						env: options.env,
+						trusted: ctx.isProjectTrusted(),
+						signal,
+					});
+					cwd = join(worktree.path, relative(top, realpathSync(ctx.cwd)));
+					const setup = worktreeSetupSummary(worktree.setup);
+					prompt = `${prompt}\n\nYou are working in an isolated git worktree at ${cwd} on branch ${worktree.branch}, a copy of the project at its last commit (uncommitted changes in the main checkout are not here). Edit files here; your changes are committed on the branch when you finish.${setup ? ` ${setup}` : ""}`;
+				}
+				const result = await runSubagent({
+					agent,
+					prompt,
+					cwd,
+					agentDir: options.agentDir ?? getAgentDir(),
+					model,
+					modelRuntime,
+					thinkingLevel: ctx.thinkingLevel,
+					extensions: options.childExtensions(depth + 1),
+					outputSchema: params.output_schema as JsonSchema | undefined,
+					signal,
+					settingsManager: options.settingsManager,
+					isolatedResources: options.isolatedResources,
+					onProgress: (p) => {
+						status[i] = `turn ${p.turns + 1}${p.lastTool ? `, ${p.lastTool}` : ""}`;
+						report();
+					},
+				});
+				if (worktree && top) {
+					let finished: FinishResult | undefined;
+					let failure: string | undefined;
+					try {
+						finished = await finishWorktree(top, worktree, { message: spec.description || spec.prompt.split("\n")[0], env: options.env });
+					} catch (error) {
+						failure = (error as Error).message;
+					}
+					result.output = [result.output, formatWorktree(worktree, finished, failure)].filter(Boolean).join("\n\n");
+				}
+				status[i] = result.error ? `stopped (${result.error})` : "done";
+				report();
+				return result;
+			});
+
+			const body = results.map((r, i) => formatResult(r, resolved[i]?.spec.description ?? "")).join("\n\n---\n\n");
+			if (results.every((r) => r.error && !r.output)) throw new Error(body);
+			return text(body, { results: results.map(({ output: _o, ...meta }) => meta) });
+		}
+
 		pi.registerTool({
 			name: "task",
 			label: "Task",
@@ -179,114 +322,96 @@ export function createSubagentExtension(options: SubagentOptions) {
 			promptGuidelines: [
 				"Use the task tool for open-ended searches across many files, for independent subtasks that can run in parallel, and for work whose details you don't need afterwards. Don't use it for a single known file or a quick grep; do those yourself. Check what subagents report before relying on it.",
 			],
-			parameters: Type.Object({
-				...taskShape,
-				prompt: Type.Optional(taskShape.prompt),
-				tasks: Type.Optional(
-					Type.Array(Type.Object(taskShape), {
-						description: `Up to ${MAX_PARALLEL_TASKS} independent tasks to run in parallel. Use instead of prompt.`,
-						maxItems: MAX_PARALLEL_TASKS,
-					}),
-				),
-				output_schema: Type.Optional(
-					Type.Record(Type.String(), Type.Unknown(), {
-						description: "JSON Schema the final reply must match; the reply is checked and the agent gets one chance to fix it.",
-					}),
-				),
-				model: Type.Optional(Type.String({ description: "Model override: inherit, an alias such as haiku, or provider/model-id." })),
-				thoroughness: Type.Optional(StringEnum(["quick", "medium", "very thorough"] as const)),
-				isolation: Type.Optional(
-					StringEnum(["worktree"] as const, {
-						description:
-							"worktree: each agent works in its own git worktree and branch, so parallel agents can edit without touching the user's checkout. Its changes come back as a commit on that branch.",
-					}),
-				),
-			}),
+			parameters: taskParameters,
 			async execute(_id, params, signal, onUpdate, ctx) {
-				const specs: TaskSpec[] = params.tasks?.length
-					? params.tasks
-					: params.prompt
-						? [{ prompt: params.prompt, subagent_type: params.subagent_type, description: params.description }]
-						: [];
-				if (specs.length === 0) throw new Error("task: pass prompt, or tasks for a parallel batch.");
-				if (specs.length > MAX_PARALLEL_TASKS) throw new Error(`task: at most ${MAX_PARALLEL_TASKS} tasks per call.`);
-				// Re-read definitions so agents added mid-session are usable.
-				load(ctx);
-				const modelRuntime = runtimeOf(ctx, options);
-				if (!modelRuntime) throw new Error("task: subagents are not available in this session (no model runtime).");
-
-				const resolved = specs.map((spec) => {
-					const name = (spec.subagent_type ?? "general").trim().toLowerCase();
-					const agent = agents.get(name);
-					if (!agent) throw new Error(`task: unknown subagent_type "${name}". Available: ${[...agents.keys()].join(", ")}.`);
-					const model = resolveModel(ctx, params.model ?? agent.model);
-					if (!model) throw new Error("task: no model is selected.");
-					return { spec, agent, model };
-				});
-
-				const status = specs.map(() => "starting");
-				const report = () =>
-					onUpdate?.(
-						text(resolved.map((r, i) => `${r.agent.name}${r.spec.description ? ` (${r.spec.description})` : ""}: ${status[i]}`).join("\n")),
-					);
-				report();
-
-				const results = await mapLimit(resolved, TASK_CONCURRENCY, async ({ spec, agent, model }, i) => {
-					let prompt = params.thoroughness ? `${spec.prompt}\n\nThoroughness: ${params.thoroughness}.` : spec.prompt;
-					let cwd = ctx.cwd;
-					let worktree: Worktree | undefined;
-					let top: string | undefined;
-					if ((params.isolation ?? agent.isolation) === "worktree" && !agent.readOnly) {
-						top = await gitTopLevel(ctx.cwd, options.env);
-						if (!top) throw new Error('task: isolation "worktree" needs a git repository.');
-						status[i] = "creating worktree";
-						report();
-						worktree = await createWorktree(top, spec.description || agent.name, {
-							env: options.env,
-							trusted: ctx.isProjectTrusted(),
-							signal,
-						});
-						cwd = join(worktree.path, relative(top, realpathSync(ctx.cwd)));
-						const setup = worktreeSetupSummary(worktree.setup);
-						prompt = `${prompt}\n\nYou are working in an isolated git worktree at ${cwd} on branch ${worktree.branch}, a copy of the project at its last commit (uncommitted changes in the main checkout are not here). Edit files here; your changes are committed on the branch when you finish.${setup ? ` ${setup}` : ""}`;
-					}
-					const result = await runSubagent({
-						agent,
-						prompt,
-						cwd,
-						agentDir: options.agentDir ?? getAgentDir(),
-						model,
-						modelRuntime,
-						thinkingLevel: ctx.thinkingLevel,
-						extensions: options.childExtensions(depth + 1),
-						outputSchema: params.output_schema as JsonSchema | undefined,
-						signal,
-						settingsManager: options.settingsManager,
-						isolatedResources: options.isolatedResources,
-						onProgress: (p) => {
-							status[i] = `turn ${p.turns + 1}${p.lastTool ? `, ${p.lastTool}` : ""}`;
-							report();
+				// Without a UI (print mode, subagents) nobody is around to receive a late report: run in the foreground.
+				if (!params.run_in_background || !ctx.hasUI) return runBatch(params, signal, onUpdate, ctx);
+				const controller = new AbortController();
+				const id = `agent_${nextBackground++}`;
+				const label =
+					params.description ||
+					params.tasks
+						?.map((t) => t.description)
+						.filter(Boolean)
+						.join(", ") ||
+					"background task";
+				const job: BackgroundTask = { id, label, started: Date.now(), status: "running", controller, done: Promise.resolve() };
+				job.done = runBatch(params, controller.signal, undefined, ctx)
+					.then(
+						(r) => {
+							job.status = controller.signal.aborted ? "stopped" : "done";
+							job.output = r.content[0]?.text ?? "";
 						},
+						(error: Error) => {
+							job.status = controller.signal.aborted ? "stopped" : "failed";
+							job.output = error.message;
+						},
+					)
+					.finally(() => {
+						job.ended = Date.now();
+						if (job.collected) return;
+						job.collected = true;
+						pi.sendMessage(
+							{
+								customType: BACKGROUND_TASK_TYPE,
+								content: `Background task ${id} (${label}) ${job.status}:\n\n${job.output ?? ""}`,
+								display: true,
+								details: { id, status: job.status },
+							},
+							{ triggerTurn: true, deliverAs: "followUp" },
+						);
 					});
-					if (worktree && top) {
-						let finished: FinishResult | undefined;
-						let failure: string | undefined;
-						try {
-							finished = await finishWorktree(top, worktree, { message: spec.description || spec.prompt.split("\n")[0], env: options.env });
-						} catch (error) {
-							failure = (error as Error).message;
-						}
-						result.output = [result.output, formatWorktree(worktree, finished, failure)].filter(Boolean).join("\n\n");
-					}
-					status[i] = result.error ? `stopped (${result.error})` : "done";
-					report();
-					return result;
-				});
-
-				const body = results.map((r, i) => formatResult(r, resolved[i]?.spec.description ?? "")).join("\n\n---\n\n");
-				if (results.every((r) => r.error && !r.output)) throw new Error(body);
-				return text(body, { results: results.map(({ output: _o, ...meta }) => meta) });
+				backgroundTasks.set(id, job);
+				return text(
+					`Started ${id} (${label}) in the background. Keep working; its report arrives as a message when it finishes, or read it early with task_output {"id":"${id}"}.`,
+					{ id, background: true },
+				);
 			},
+		});
+
+		pi.registerTool({
+			name: "task_output",
+			label: "Background task",
+			description:
+				"Status or report of a background task started with run_in_background. Optionally wait up to wait_seconds for it to finish.",
+			promptSnippet: "Check on a background subagent task",
+			parameters: Type.Object({
+				id: Type.String({ description: "Id returned by task with run_in_background, e.g. agent_1" }),
+				wait_seconds: Type.Optional(Type.Number({ description: "Wait up to this many seconds (max 600)" })),
+			}),
+			async execute(_id, params, signal) {
+				const job = backgroundTasks.get(params.id.trim());
+				if (!job) return text(`No background task ${params.id}. Known: ${[...backgroundTasks.keys()].join(", ") || "none"}.`);
+				const wait = Math.min(600, Math.max(0, params.wait_seconds ?? 0));
+				if (wait && job.status === "running")
+					await Promise.race([
+						job.done,
+						new Promise((r) => setTimeout(r, wait * 1000)),
+						new Promise((r) => signal?.addEventListener("abort", r, { once: true })),
+					]);
+				if (job.status === "running") return text(`${describeTask(job)}\nStill running.`);
+				job.collected = true;
+				return text(`${describeTask(job)}\n\n${job.output ?? ""}`);
+			},
+		});
+
+		pi.registerCommand("tasks", {
+			description: "Background subagent tasks: /tasks [stop ID|stop all]",
+			handler: async (args, ctx) => {
+				const [verb, id] = args.trim().split(/\s+/);
+				if (verb === "stop" && id) {
+					const jobs = id === "all" ? [...backgroundTasks.values()] : [backgroundTasks.get(id)].filter((j) => !!j);
+					const running = jobs.filter((j) => j?.status === "running");
+					for (const j of running) j?.controller.abort();
+					return ctx.ui.notify(running.length ? `Stopping ${running.map((j) => j?.id).join(", ")}.` : "Nothing to stop.", "info");
+				}
+				const jobs = [...backgroundTasks.values()];
+				ctx.ui.notify(jobs.length ? jobs.map(describeTask).join("\n") : "No background tasks.", "info");
+			},
+		});
+
+		pi.on("session_shutdown", () => {
+			for (const job of backgroundTasks.values()) if (job.status === "running") job.controller.abort();
 		});
 
 		pi.registerCommand("worktrees", {

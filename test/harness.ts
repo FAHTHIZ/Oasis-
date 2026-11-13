@@ -27,7 +27,7 @@ export interface Harness {
 export async function createHarness(
 	extensions: InlineExtension[],
 	script: FauxResponseStep[],
-	options: { models?: string[] } = {},
+	options: { models?: string[]; ui?: Record<string, unknown> } = {},
 ): Promise<Harness> {
 	const cwd = mkdtempSync(join(tmpdir(), "oasis-test-"));
 	const agentDir = join(cwd, ".oasis-agent");
@@ -72,7 +72,12 @@ export async function createHarness(
 		sessionManager: SessionManager.inMemory(cwd),
 	});
 	// pi's own modes bind extensions before the first prompt; this emits session_start.
-	await session.bindExtensions({ mode: "print" });
+	if (options.ui) {
+		// A UI whose methods default to no-ops; tests override the ones they script.
+		const ui = options.ui;
+		const uiContext = new Proxy(ui, { get: (t, k) => (k in t ? t[k as string] : () => undefined) });
+		await session.bindExtensions({ mode: "tui", uiContext: uiContext as never });
+	} else await session.bindExtensions({ mode: "print" });
 	return {
 		session,
 		cwd,
