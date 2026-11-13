@@ -4,6 +4,7 @@
 
 ### Added
 
+- Topic notes, ported from the original OASIS auto memory: `notes` tool (save, search, read, verify, delete), one file per topic under `~/.oasis/agent/notes/` and `~/.oasis/agent/projects/<repo>/notes/` with a generated `MEMORY.md` index, secret redaction, duplicate merging, freshness verdicts, archiving when full, the index in the system prompt and per-prompt BM25 recall (MiniSearch, wink-porter2-stemmer) as a hidden message. `/notes`; `OASIS_NOTES=0`, `OASIS_NOTES_RECALL=0`.
 - Shell risk tiers, ported from the original OASIS (`src/shell/risk.ts`): many more blocked commands (force-push, publishing, deleting keys, system-file writes, `cd ~ && rm -rf *`) and a high-risk tier that needs the user's approval (`git reset --hard`, `branch -D`, prune, `kubectl delete`, `terraform destroy`, `DROP TABLE`, startup-file persistence, decoded payloads).
 - Standing corrections, ported from the original OASIS: "stop saying X" is saved, restated every turn and enforced with one rewrite; `/corrections`.
 - Tolerant edits, ported from the original OASIS: unique indentation-, spacing- and line-number-insensitive matches for `edit`, re-indented replacements, and closest-match hints on failure.

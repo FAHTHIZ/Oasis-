@@ -7,6 +7,7 @@ import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createNotesExtension } from "./notes.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
 import { createReliabilityExtension } from "./reliability.ts";
@@ -26,6 +27,7 @@ export function oasisExtensions(): InlineExtension[] {
 	return [
 		// Memory sets a prompt section, so it runs before identity rewrites the rendered prompt.
 		{ name: "oasis-memory", factory: createMemoryExtension() },
+		{ name: "oasis-notes", factory: createNotesExtension() },
 		// "Stop saying X" sticks across turns, compaction and sessions.
 		{ name: "oasis-corrections", factory: createStandingCorrectionsExtension() },
 		{ name: "oasis-identity", factory: identityExtension },

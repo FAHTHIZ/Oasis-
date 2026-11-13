@@ -39,6 +39,7 @@ export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
+export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
@@ -48,6 +49,7 @@ export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type Tu
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
 export { CorrectionStore, correctionViolations, extractCorrections } from "./memory/corrections.ts";
+export { NOTE_CATEGORIES, type Note, NoteStore, noteFreshness, tokenize as tokenizeNotes } from "./memory/notes.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
 export {

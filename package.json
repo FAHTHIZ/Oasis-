@@ -55,8 +55,10 @@
 		"ipaddr.js": "2.5.0",
 		"linkedom": "0.18.15",
 		"minimatch": "11.0.3",
+		"minisearch": "^7.2.0",
 		"typebox": "1.4.7",
-		"unbash": "6.0.4"
+		"unbash": "6.0.4",
+		"wink-porter2-stemmer": "^2.0.1"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.7",
