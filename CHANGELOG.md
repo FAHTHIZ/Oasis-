@@ -4,6 +4,7 @@
 
 ### Added
 
+- Gateway voice notes: with `OASIS_TRANSCRIBE` (groq, openai or a whisper server URL) audio sent in chat is transcribed into the prompt.
 - Claude Code plugins: `/plugin` marketplaces and installs; plugin skills, commands, subagents, hooks and MCP servers load, including plugins enabled in Claude Code.
 - Cron jobs can deliver results to Telegram, Discord or Slack (`deliver`), and gateway chats schedule jobs that report back to them.
 - Gateway attachments: chat photos and files are saved to `.oasis/inbox`, and images are passed to the model.

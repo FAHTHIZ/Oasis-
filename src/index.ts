@@ -114,6 +114,7 @@ export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
 export { createPackageVettingExtension } from "./extensions/package-vetting.ts";
 export { createPermissionsExtension } from "./extensions/permissions.ts";
+export { createPluginsExtension, PLUGIN_USAGE, type PluginsOptions } from "./extensions/plugins.ts";
 export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
@@ -135,6 +136,7 @@ export {
 export { createDiscordGateway, DISCORD_MAX_MESSAGE, stripDiscordMention } from "./gateway/discord.ts";
 export { createSlackGateway, SLACK_MAX_MESSAGE, slackChatKey, stripSlackMention } from "./gateway/slack.ts";
 export { addressedText, createTelegramGateway, TELEGRAM_MAX_MESSAGE } from "./gateway/telegram.ts";
+export { createTranscriber, isAudio, type Transcriber, transcriberConfig, transcriberFromEnv } from "./gateway/transcribe.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
@@ -143,6 +145,9 @@ export { extractFollowups, type Followup, FollowupStore, formatFollowups } from 
 export { NOTE_CATEGORIES, type Note, NoteStore, noteFreshness, tokenize as tokenizeNotes } from "./memory/notes.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
+export { type ActivePluginComponents, activePluginComponents } from "./plugins/active.ts";
+export { expandPluginVars, loadPluginComponents, type PluginComponents, readManifest } from "./plugins/components.ts";
+export { claudeCodePlugins, gitUrl, PluginStore, readMarketplace } from "./plugins/store.ts";
 export {
 	buildRuntimePolicy,
 	DEFAULT_ALLOWED_DOMAINS,

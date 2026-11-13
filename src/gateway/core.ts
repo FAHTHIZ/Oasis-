@@ -12,6 +12,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { type IncomingFile, type InlineImage, receiveAttachments } from "./attachments.ts";
+import { type Transcriber, transcriberFromEnv } from "./transcribe.ts";
 
 export interface GatewaySession {
 	prompt(text: string, images?: InlineImage[]): Promise<void>;
@@ -44,6 +45,8 @@ export interface GatewayOptions {
 	send(chatKey: string, text: string): Promise<void>;
 	typing?(chatKey: string): Promise<void>;
 	log?(line: string): void;
+	/** Turns voice notes into text. Default: from OASIS_TRANSCRIBE; null turns it off. */
+	transcribe?: Transcriber | null;
 }
 
 export const GATEWAY_HELP = [
@@ -83,8 +86,11 @@ export class ChatGateway {
 	private pending = new Map<string, string[]>();
 	private files: Record<string, string>;
 
+	private transcribe: Transcriber | undefined;
+
 	constructor(private readonly options: GatewayOptions) {
 		this.files = this.loadState();
+		this.transcribe = options.transcribe === undefined ? transcriberFromEnv() : (options.transcribe ?? undefined);
 	}
 
 	allowed(userId: string): boolean {
@@ -106,7 +112,10 @@ export class ChatGateway {
 		if (command) return this.command(chatKey, command);
 		let images: InlineImage[] = [];
 		if (message.files?.length) {
-			const received = await receiveAttachments(this.options.workspace ?? process.cwd(), text, message.files, { log: (l) => this.log(l) });
+			const received = await receiveAttachments(this.options.workspace ?? process.cwd(), text, message.files, {
+				log: (l) => this.log(l),
+				transcribe: this.transcribe,
+			});
 			text = received.text;
 			images = received.images;
 		}
