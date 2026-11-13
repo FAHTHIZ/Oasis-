@@ -9,6 +9,7 @@ export {
 	worktreeSetupPlan,
 } from "./agents/worktrees.ts";
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
+export { type AiComment, AiCommentScanner, buildAiCommentPrompt, findAiComments } from "./code/ai-comments.ts";
 export { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./code/ast.ts";
 export {
 	AST_GREP_STRICTNESS,
@@ -80,6 +81,7 @@ export { agentPrompt, defaultOasisCommand, type RunnerOptions, runJob, runNow, S
 export { graceMs, nextRun, parseDuration, parseSchedule, type Schedule, ScheduleError } from "./cron/schedule.ts";
 export { CronError, type CronJob, type CronRun, CronStore, describeJob } from "./cron/store.ts";
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
+export { createAiCommentsExtension } from "./extensions/ai-comments.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";
 export {
 	CHECKPOINT_TYPE,

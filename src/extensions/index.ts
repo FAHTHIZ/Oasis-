@@ -1,5 +1,6 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
 import { createAgentIgnoreExtension } from "./agent-ignore.ts";
+import { createAiCommentsExtension } from "./ai-comments.ts";
 import { createAstGrepExtension } from "./ast-grep.ts";
 import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
@@ -77,6 +78,7 @@ export function oasisExtensions(): InlineExtension[] {
 		// Scheduled jobs (Hermes cronjob); main session only.
 		{ name: "oasis-cron", factory: createCronExtension() },
 		{ name: "oasis-doctor", factory: createDoctorExtension() },
+		{ name: "oasis-ai-comments", factory: createAiCommentsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
