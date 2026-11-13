@@ -6,6 +6,7 @@
 
 import type { TodoItem } from "../todo/list.ts";
 import { admitsUnverified, claimedFailedEdits, claimsPassing } from "./claims.ts";
+import { announcesNextStep, asksForAction, claimsUnmadeChange, givesUpEarly, readsLikeInstructions, refusesSpuriously } from "./intent.ts";
 import type { TurnLedger } from "./ledger.ts";
 import { userAllowsTestChanges } from "./test-tamper.ts";
 
@@ -110,10 +111,66 @@ export const emptyReplyGate: Gate = ({ reply }) => {
 	};
 };
 
+/** A canned refusal for an ordinary change request, before any tool ran. */
+export const refusalGate: Gate = ({ ledger, reply }) => {
+	if (ledger.toolCalls > 0 || !asksForAction(ledger.prompt) || !refusesSpuriously(reply)) return undefined;
+	return {
+		gate: "spurious-refusal",
+		reminder:
+			"This is an ordinary software task in the user's own repository. Start now with one tool call: read the file you need, then edit or write it. If you believe the request is actually harmful, say specifically why.",
+	};
+};
+
+/** "I have updated X" when nothing that could change a file ran. */
+export const unmadeChangeClaimGate: Gate = ({ ledger, reply }) => {
+	if (!ledger.nothingChanged || !claimsUnmadeChange(reply)) return undefined;
+	return {
+		gate: "unmade-change-claim",
+		reminder:
+			"Your reply says you made a change, but nothing was changed during this request: no edit, write or command that could change a file succeeded. Do not report work that did not happen. Make the change now with edit or write, then check it.",
+		notice: "Not done: the reply describes a change, but no file was changed.",
+	};
+};
+
+/** Giving up after a tool error on a change request, with nothing changed. */
+export const giveUpGate: Gate = ({ ledger, reply }) => {
+	if (!ledger.nothingChanged || ledger.toolErrors === 0 || !asksForAction(ledger.prompt) || !givesUpEarly(reply)) return undefined;
+	return {
+		gate: "gave-up",
+		reminder:
+			"Do not give up yet: nothing has been changed and the user asked for this change. A tool error is information, not a dead end. Read the error, change your approach (for example, write a file that does not exist yet, or read the file first to copy the exact text for edit), and try again. Only stop if the task is truly impossible, and then explain exactly why.",
+	};
+};
+
+/** "Next, I'll run the tests." and then the turn ends, with nothing changed. */
+export const announcedStepGate: Gate = ({ ledger, reply }) => {
+	if (!ledger.nothingChanged || !asksForAction(ledger.prompt) || !announcesNextStep(reply)) return undefined;
+	return {
+		gate: "announced-step",
+		reminder:
+			"You said what you will do next but ended your turn without doing it, and nothing has changed yet. Do that step now with a tool call. If a tool failed, read its error and fix the call.",
+	};
+};
+
+/** Steps or a code block handed to the user instead of making the requested change. */
+export const describedInsteadGate: Gate = ({ ledger, reply }) => {
+	if (!ledger.nothingChanged || !asksForAction(ledger.prompt) || !readsLikeInstructions(reply)) return undefined;
+	return {
+		gate: "described-instead",
+		reminder:
+			"You described the work instead of doing it. The user asked you to make this change, and you have tools to do it. Do it now: read what you need, make the change with edit or write, and run a check with bash. Do not explain the steps again or ask the user to do them.",
+	};
+};
+
 /** Gates in priority order: the first unresolved finding gets the reminder. */
 export const DEFAULT_GATES: readonly Gate[] = [
 	testTamperGate,
 	failedEditClaimGate,
+	refusalGate,
+	unmadeChangeClaimGate,
+	giveUpGate,
+	announcedStepGate,
+	describedInsteadGate,
 	falsePassClaimGate,
 	unverifiedEditsGate,
 	openTodosGate,

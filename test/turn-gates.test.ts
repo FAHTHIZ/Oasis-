@@ -180,3 +180,47 @@ describe("safety extension", () => {
 		expect(messagesText(harness.calls[1]?.messages ?? [])).toContain("OASIS safety policy");
 	});
 });
+
+describe("early-stop gates", () => {
+	it("classifies requests and replies", async () => {
+		const intent = await import("../src/core/intent.ts");
+		expect(intent.asksForAction("Please add a --verbose flag")).toBe(true);
+		expect(intent.asksForAction("how do I add a flag?")).toBe(false);
+		expect(intent.readsLikeInstructions("1. Open the file\n2. Add the flag")).toBe(true);
+		expect(intent.announcesNextStep("Let me fix that now:")).toBe(true);
+		expect(intent.announcesNextStep("All done, the tests passed.")).toBe(false);
+		expect(intent.givesUpEarly("I apologize, but the file does not exist.")).toBe(true);
+		expect(intent.refusesSpuriously("I'm sorry, but I can't assist with that.")).toBe(true);
+		expect(intent.refusesSpuriously("I can't help with that because it would leak a password.")).toBe(false);
+		expect(intent.claimsUnmadeChange("I've updated src/cli.ts to accept the flag.")).toBe(true);
+		expect(intent.claimsUnmadeChange("I've created a task list for this.")).toBe(false);
+	});
+
+	it("pushes back on a described change, then lets the real edit through", async () => {
+		harness = await createHarness(
+			[gates],
+			[
+				say("You can do this:\n1. Create a.txt\n2. Put hello in it"),
+				tool("write", { path: "a.txt", content: "hello\n" }),
+				say("Wrote a.txt. Nothing to run for a plain text file."),
+			],
+		);
+		await harness.session.prompt("create a.txt containing hello");
+		expect(messagesText(harness.calls[1]?.messages ?? [])).toContain("You described the work instead of doing it");
+		expect(readFileSync(join(harness.cwd, "a.txt"), "utf8")).toBe("hello\n");
+	});
+
+	it("flags a claimed change when nothing changed", async () => {
+		harness = await createHarness([gates], [say("I've updated a.txt with the greeting."), say("I've updated a.txt with the greeting.")]);
+		await harness.session.prompt("update a.txt with a greeting");
+		expect(messagesText(harness.calls[1]?.messages ?? [])).toContain("nothing was changed during this request");
+		const notices = customEntries(harness, GATE_NOTICE_TYPE);
+		expect(JSON.stringify(notices.at(-1)?.content)).toContain("no file was changed");
+	});
+
+	it("does not nudge questions or read-only answers", async () => {
+		harness = await createHarness([gates], [say("You can pass --verbose:\n```\noasis --verbose\n```")]);
+		await harness.session.prompt("how do I make it verbose?");
+		expect(harness.calls).toHaveLength(1);
+	});
+});

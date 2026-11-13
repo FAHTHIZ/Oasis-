@@ -32,6 +32,17 @@ export class TurnLedger {
 	tampering: TamperFinding[] = [];
 	/** The user's prompt for this run. */
 	prompt = "";
+	/** Successful calls of tools that can change the workspace (anything but read-only tools). */
+	mutatingCalls = 0;
+	/** Tool calls that failed this prompt. */
+	toolErrors = 0;
+	/** Every tool call this prompt. */
+	toolCalls = 0;
+
+	/** Nothing this prompt could have changed a file: no edits and no other mutating tool. */
+	get nothingChanged(): boolean {
+		return this.edited.size === 0 && this.mutatingCalls === 0;
+	}
 
 	reset(): void {
 		this.unverified.clear();
@@ -42,6 +53,9 @@ export class TurnLedger {
 		this.snapshots.clear();
 		this.tampering = [];
 		this.prompt = "";
+		this.mutatingCalls = 0;
+		this.toolErrors = 0;
+		this.toolCalls = 0;
 	}
 
 	/** Remember a file's content before its first edit this prompt. Later calls are ignored. */

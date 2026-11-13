@@ -54,6 +54,14 @@ export {
 	testTamperGate,
 	unverifiedEditsGate,
 } from "./core/gates.ts";
+export {
+	announcesNextStep,
+	asksForAction,
+	claimsUnmadeChange,
+	givesUpEarly,
+	readsLikeInstructions,
+	refusesSpuriously,
+} from "./core/intent.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";

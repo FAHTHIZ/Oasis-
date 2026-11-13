@@ -4,6 +4,7 @@
 
 ### Added
 
+- Early-stop turn gates, ported from the original OASIS turn guards (`src/core/intent.ts`): on a change request where nothing changed, replies that describe the work, announce a next step and stop, give up after a tool error, refuse spuriously, or claim an unmade change get one reminder (and a visible note for unmade-change claims).
 - Git safety snapshots, ported from the original OASIS (`src/security/git-safety.ts`): the working tree and any dropped stash entries are saved under `refs/oasis/safety/` before bash commands that discard work, with restore instructions in the result; the command is blocked when the snapshot fails. `OASIS_GIT_SAFETY=0`.
 - No-op edit check, ported from the original OASIS (`src/tools/noop-edit.ts`): scripted in-place edits through bash that exit 0 without changing any named file get a warning in the result. `OASIS_NOOP_EDIT_CHECK=0`.
 - Commit secret gate, ported from the original OASIS (`src/security/commit-gate.ts`): bash `git commit` is blocked when the commit would add a credential, including files the same command stages; the real index is never modified. Diff secret findings are now one per value and line. `OASIS_COMMIT_SECRET_SCAN=0`.

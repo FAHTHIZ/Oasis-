@@ -16,6 +16,7 @@ import { DEFAULT_GATES, type Gate, runGates } from "../core/gates.ts";
 import { TurnLedger } from "../core/ledger.ts";
 import { analyzeTestChange, isTestConfigPath, isTestPath } from "../core/test-tamper.ts";
 import { isOpen, type TodoDetails, type TodoItem } from "../todo/list.ts";
+import { planModeBlock } from "./plan-mode.ts";
 
 export const GATE_REMINDER_TYPE = "oasis.gate-reminder";
 export const GATE_NOTICE_TYPE = "oasis.notice";
@@ -84,6 +85,9 @@ export function createTurnGatesExtension(options: TurnGatesOptions = {}) {
 		});
 
 		pi.on("tool_result", (event) => {
+			ledger.toolCalls++;
+			if (event.isError) ledger.toolErrors++;
+			else if (planModeBlock(event.toolName, event.input)) ledger.mutatingCalls++;
 			if (event.toolName === "todo" && !event.isError) {
 				const written = (event.details as TodoDetails | undefined)?.todos;
 				if (Array.isArray(written)) todos = written;
