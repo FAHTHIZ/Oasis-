@@ -1,6 +1,7 @@
 import type { FauxResponseStep } from "@earendil-works/pi-ai";
 import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
+import { CircuitBreakers, PROVIDER_FAILURE } from "../src/core/circuit-breaker.ts";
 import { BLOCK_AT, callSignature, LoopDetector, NOTE_AT, STOP_AT } from "../src/core/loop-detector.ts";
 import { createReliabilityExtension } from "../src/extensions/reliability.ts";
 import { createHarness, type Harness } from "./harness.ts";
@@ -87,5 +88,55 @@ describe("reliability extension", () => {
 		);
 		await harness.session.prompt("go");
 		expect(harness.calls).toHaveLength(1);
+	});
+});
+
+describe("circuit breakers", () => {
+	it("opens after repeated failures, probes after the cooldown and backs off", () => {
+		let now = 0;
+		const b = new CircuitBreakers({ threshold: 2, cooldownMs: 1000, maxCooldownMs: 3000, now: () => now });
+		expect(b.failure("p/m", "529")).toBe("closed");
+		expect(b.failure("p/m", "529")).toBe("open");
+		expect(b.allows("p/m")).toBe(false);
+		expect(b.allows("p/other")).toBe(true);
+		now = 1000;
+		expect(b.state("p/m")).toBe("half-open");
+		expect(b.failure("p/m")).toBe("open");
+		expect(b.remainingMs("p/m")).toBe(2000);
+		now = 3000;
+		b.failure("p/m");
+		expect(b.remainingMs("p/m")).toBe(3000);
+		b.success("p/m");
+		expect(b.state("p/m")).toBe("closed");
+		expect(PROVIDER_FAILURE.test("429 Too Many Requests")).toBe(true);
+		expect(PROVIDER_FAILURE.test("400 invalid tool schema")).toBe(false);
+	});
+
+	it("stays on the fallback while the primary's breaker is open, then probes it again", async () => {
+		let now = 0;
+		const breakers = new CircuitBreakers({ cooldownMs: 1000, now: () => now });
+		const models: string[] = [];
+		const step =
+			(reply: () => ReturnType<typeof say>): FauxResponseStep =>
+			(_context, _options, _state, model) => {
+				models.push(model.id);
+				return reply();
+			};
+		const fail = () => fauxAssistantMessage("", { stopReason: "error", errorMessage: "529 overloaded" });
+		harness = await createHarness(
+			[{ name: "oasis-reliability", factory: createReliabilityExtension({ fallbackModels: ["faux/faux-2"], breakers }) }],
+			[step(fail), step(() => say("a")), step(fail), step(() => say("b")), step(() => say("c")), step(() => say("d"))],
+			{ models: ["faux-1", "faux-2"] },
+		);
+		await harness.session.prompt("one");
+		expect(harness.session.model?.id).toBe("faux-1");
+		await harness.session.prompt("two");
+		// Two failures in a row: the breaker is open, so OASIS stays on faux-2.
+		expect(harness.session.model?.id).toBe("faux-2");
+		await harness.session.prompt("three");
+		now = 1500;
+		await harness.session.prompt("four");
+		expect(models).toEqual(["faux-1", "faux-2", "faux-1", "faux-2", "faux-2", "faux-1"]);
+		expect(breakers.state("faux/faux-1")).toBe("closed");
 	});
 });

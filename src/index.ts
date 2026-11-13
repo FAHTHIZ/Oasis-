@@ -41,6 +41,7 @@ export { buildRepoMap, extractDefinitions, listSourceFiles, type RepoMap, type R
 export { canCheckSyntax, checkFile, newProblems } from "./code/syntax-check.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
+export { type BreakerState, CircuitBreakers, PROVIDER_FAILURE } from "./core/circuit-breaker.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
 export { type CheckStatus, type DoctorCheck, type DoctorReport, formatDoctor, onPath, runDoctor } from "./core/doctor.ts";
 export {

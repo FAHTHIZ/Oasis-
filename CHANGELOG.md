@@ -4,6 +4,7 @@
 
 ### Added
 
+- Per-model circuit breakers for the fallback chain (`src/core/circuit-breaker.ts`, ported from the original OASIS): after two failed runs a model is skipped until a cooldown with exponential backoff, then probed once; `/breakers`.
 - AI comments (`src/code/ai-comments.ts`, ported from the original OASIS after Aider): `--watch-files` and `/watch [on|off]` turn `AI!`, `AI?` and `AI` code comments into prompts, firing once per new set and skipping secret and agent-ignored files.
 - `--safe-mode` (`src/core/safe-mode.ts`), also via `OASIS_SAFE_MODE` or `CLAUDE_CODE_SAFE_MODE`: no context files, skills, prompt templates, discovered extensions, hooks, MCP servers or custom agents; safety, permissions and memory stay on.
 - `oasis doctor [--fix]` and `/doctor [fix]` (`src/core/doctor.ts`): install and project health checks (runtime, tools, native modules, credentials, settings JSON, permission rules, hooks, MCP commands, instruction file size, language servers, trust, git locks, cron jobs) with safe repairs of OASIS-owned state.

@@ -8,13 +8,17 @@
  *   (overload, rate limit, server error, auth or model errors), switch to the
  *   next model from `--fallback-model a,b` or `fallbackModels` in
  *   ~/.oasis/agent/settings.json or .oasis/settings.json, and continue where it
- *   failed. The primary model comes back for the next prompt. Context
- *   overflow is left to compaction.
+ *   failed. The primary model comes back for the next prompt, unless its
+ *   circuit breaker is open (two failed runs in a row): then OASIS stays on
+ *   the fallback until a cooldown (30s, doubling to 30min) passes and one
+ *   probe prompt succeeds. `/breakers` shows them. Context overflow is left
+ *   to compaction.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Model } from "@earendil-works/pi-ai";
 import { type CustomMessageEntryDraft, type ExtensionAPI, type ExtensionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
+import { CircuitBreakers, PROVIDER_FAILURE } from "../core/circuit-breaker.ts";
 import { LoopDetector } from "../core/loop-detector.ts";
 import { projectRoot } from "../memory/instructions.ts";
 
@@ -24,6 +28,8 @@ export interface ReliabilityOptions {
 	agentDir?: string;
 	/** Fallback chain ("provider/id" or an id); overrides settings and the flag (tests). */
 	fallbackModels?: string[];
+	/** Shared breakers (tests); default one set per extension instance. */
+	breakers?: CircuitBreakers;
 }
 
 function settingsList(file: string): string[] {
@@ -58,6 +64,8 @@ export function createReliabilityExtension(options: ReliabilityOptions = {}) {
 		const loopNotes = new Map<string, string>();
 		let primary: AnyModel | undefined;
 		const tried = new Set<string>();
+		const breakers = options.breakers ?? new CircuitBreakers();
+		const keyOf = (m: AnyModel) => `${m.provider}/${m.id}`;
 
 		pi.registerFlag("fallback-model", {
 			description: "Models to switch to when the current one keeps failing (comma-separated provider/id)",
@@ -103,7 +111,10 @@ export function createReliabilityExtension(options: ReliabilityOptions = {}) {
 		});
 
 		pi.on("agent_before_settle", async (event, ctx) => {
-			if (event.outcome !== "error") return undefined;
+			if (event.outcome !== "error") {
+				if (ctx.model) breakers.success(keyOf(ctx.model));
+				return undefined;
+			}
 			const messages = event.context.contextMessages;
 			const last = messages[messages.length - 1] as { role?: string; stopReason?: string; errorMessage?: string } | undefined;
 			if (last?.role !== "assistant" || last.stopReason !== "error") return undefined;
@@ -112,10 +123,11 @@ export function createReliabilityExtension(options: ReliabilityOptions = {}) {
 			const current = ctx.model;
 			if (!current) return undefined;
 			primary ??= current;
+			if (PROVIDER_FAILURE.test(error) || !/\b4\d\d\b/.test(error)) breakers.failure(keyOf(current), error);
 			tried.add(`${current.provider}/${current.id}`);
 			const next = chain(ctx)
 				.map((spec) => findModel(ctx, spec))
-				.find((m): m is AnyModel => !!m && !tried.has(`${m.provider}/${m.id}`));
+				.find((m): m is AnyModel => !!m && !tried.has(keyOf(m)) && breakers.allows(keyOf(m)));
 			if (!next) return undefined;
 			if (!(await pi.setModel(next))) return undefined;
 			tried.add(`${next.provider}/${next.id}`);
@@ -135,11 +147,38 @@ export function createReliabilityExtension(options: ReliabilityOptions = {}) {
 			tried.clear();
 			if (primary && !same(primary, ctx.model)) {
 				const back = primary;
+				if (!breakers.allows(keyOf(back))) {
+					// The primary keeps failing: stay on the fallback until its cooldown ends.
+					const wait = Math.ceil(breakers.remainingMs(keyOf(back)) / 1000);
+					ctx.ui.notify(
+						`${keyOf(back)} keeps failing; staying on ${ctx.model ? keyOf(ctx.model) : "the fallback"} and trying it again in ${wait}s.`,
+						"warning",
+					);
+					return;
+				}
 				primary = undefined;
 				if (await pi.setModel(back)) ctx.ui.notify(`Back to ${back.provider}/${back.id}.`, "info");
 				return;
 			}
 			primary = undefined;
+		});
+
+		pi.on("before_agent_start", async (_event, ctx) => {
+			// A cooled-down primary gets one probe prompt (half-open).
+			if (primary && ctx.model && !same(primary, ctx.model) && breakers.allows(keyOf(primary))) {
+				const back = primary;
+				primary = undefined;
+				if (await pi.setModel(back)) ctx.ui.notify(`Trying ${keyOf(back)} again.`, "info");
+			}
+			return undefined;
+		});
+
+		pi.registerCommand("breakers", {
+			description: "Show model circuit breakers (models OASIS is avoiding after repeated failures)",
+			handler: async (_args, ctx) => {
+				const lines = breakers.describe();
+				ctx.ui.notify(lines.length ? lines.join("\n") : "All models healthy.", "info");
+			},
 		});
 	};
 }
