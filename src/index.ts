@@ -35,6 +35,7 @@ export {
 	RESTORE_TYPE,
 } from "./extensions/checkpoints.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
+export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
@@ -88,4 +89,5 @@ export {
 	type TodoItem,
 	type TodoStatus,
 } from "./todo/list.ts";
+export { closestMatchHint, type RelaxedMatch, relaxedMatch } from "./tools/edit-match.ts";
 export { type RepairedCall, repairToolCall, unknownToolMessage } from "./tools/repair.ts";
