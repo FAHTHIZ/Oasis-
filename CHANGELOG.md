@@ -4,6 +4,8 @@
 
 ### Added
 
+- Tool-call repair: calls using Claude Code, Codex, Gemini CLI, Hermes or OpenCode tool names are renamed to the active OASIS tool and their arguments translated (path aliases, `old_string`/`new_string` and MultiEdit edits, Codex argv commands with `workdir`, millisecond timeouts, `update_plan` and `TodoWrite` lists, Anthropic text-editor commands) when the assistant message ends, so the safety policy, sandbox and gates see the real call. Unknown tools get the list of available tools and the closest match.
+
 - Task list: `todo` tool (full-list writes, statuses pending/in_progress/completed/cancelled, one in progress, cancelled items need a note), TUI widget with the open items, `/todos` command, and an open-todos gate that reminds the agent once and then shows "Not done: N tasks still open". Stopping to ask the user a question does not trigger it.
 
 - Memory extension: bounded MEMORY.md (agent notes) and USER.md (user profile) curated with a `memory` tool (add, patch, remove), scanned for prompt injection, exfiltration commands, SSH keys and secrets, and frozen into the system prompt at session start. `session_search` tool: FTS5 full-text search over all past sessions using Node's built-in SQLite, indexed incrementally, plus reading a hit in context. `/memory` command.

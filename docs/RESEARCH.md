@@ -87,7 +87,7 @@ These came out of real failures in the old system and are being ported as pi ext
 | False completion claims ("tests pass" without running them)     | Done; also catches piped, `\|\|`-masked and unfinished runs           |
 | Empty final reply                                               | Done                                                                  |
 | Claiming a change whose edit failed                             | Done                                                                  |
-| Invented tool names                                             | Next                                                                  |
+| Invented tool names                                             | Done; alias repair plus a list of real tools for unknown names        |
 | Open todo items at the end of a turn                            | Done; `todo` tool plus open-todos gate                                |
 | Test tampering detection                                        | Done; snapshot before first edit, jsdiff, "Tests weakened" notice     |
 | Standing corrections (user corrections remembered across turns) | Planned                                                               |

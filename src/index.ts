@@ -28,6 +28,7 @@ export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.t
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { todoExtension } from "./extensions/todo.ts";
+export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
@@ -54,3 +55,4 @@ export {
 	type TodoItem,
 	type TodoStatus,
 } from "./todo/list.ts";
+export { type RepairedCall, repairToolCall, unknownToolMessage } from "./tools/repair.ts";
