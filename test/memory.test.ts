@@ -6,7 +6,15 @@ import { afterEach, describe, expect, it } from "vitest";
 import { identityExtension, OASIS_PREAMBLE } from "../src/extensions/identity.ts";
 import { createMemoryExtension } from "../src/extensions/memory.ts";
 import { ftsQuery, SessionIndex } from "../src/memory/session-index.ts";
-import { MEMORY_LIMITS, MemoryError, MemoryStore, scanMemoryText } from "../src/memory/store.ts";
+import {
+	closestEntries,
+	MEMORY_LIMITS,
+	MemoryError,
+	MemoryStore,
+	projectKey,
+	projectMemoryDir,
+	scanMemoryText,
+} from "../src/memory/store.ts";
 import { createHarness, type Harness, messagesText } from "./harness.ts";
 
 const temps: string[] = [];
@@ -57,6 +65,55 @@ describe("MemoryStore", () => {
 		store.add("memory", "uses vitest");
 		store.add("memory", "uses biome");
 		expect(() => store.remove("memory", "uses")).toThrow(/matches 2 entries/);
+	});
+
+	it("applies a batch all or nothing and checks the limit on the result", () => {
+		const store = new MemoryStore(temp());
+		store.add("user", "a".repeat(MEMORY_LIMITS.user - 20));
+		// Full: a plain add fails, but remove + add in one batch fits.
+		expect(() => store.add("user", "b".repeat(30))).toThrow(/Consolidate/);
+		store.apply([
+			{ target: "user", action: "remove", old_text: "aaaa" },
+			{ target: "user", action: "add", content: "b".repeat(30) },
+			{ target: "memory", action: "add", content: "uses pnpm" },
+		]);
+		expect(store.entries("user")).toEqual(["b".repeat(30)]);
+		expect(store.entries("memory")).toEqual(["uses pnpm"]);
+		// A failing operation leaves every file untouched.
+		expect(() =>
+			store.apply([
+				{ target: "memory", action: "add", content: "second" },
+				{ target: "user", action: "remove", old_text: "missing" },
+			]),
+		).toThrow(/operation 2 .*Nothing was saved/);
+		expect(store.entries("memory")).toEqual(["uses pnpm"]);
+	});
+
+	it("suggests the closest entries when old_text matches nothing", () => {
+		const store = new MemoryStore(temp());
+		store.add("memory", "Deploys run through GitHub Actions only.");
+		store.add("memory", "Database is Postgres 16.");
+		expect(() => store.remove("memory", "deploys via github workflow")).toThrow(
+			/Closest entries:\n {2}- Deploys run through GitHub Actions/,
+		);
+		expect(closestEntries(["x y", "z"], "q")).toEqual([]);
+	});
+
+	it("keeps project memory per repository, shared by its worktrees", () => {
+		const base = temp();
+		const repo = join(base, "repo");
+		mkdirSync(join(repo, ".git", "worktrees", "feat"), { recursive: true });
+		mkdirSync(join(repo, "src"), { recursive: true });
+		const wt = join(base, "feat");
+		mkdirSync(wt);
+		writeFileSync(join(wt, ".git"), `gitdir: ${join(repo, ".git", "worktrees", "feat")}\n`);
+		expect(projectKey(join(repo, "src"))).toBe(projectKey(repo));
+		expect(projectKey(wt)).toBe(projectKey(repo));
+		expect(projectKey(base)).not.toBe(projectKey(repo));
+		const store = new MemoryStore(temp(), { projectDir: projectMemoryDir(base, repo) });
+		store.add("project", "Run npm run check before pushing.");
+		expect(store.render()).toContain("PROJECT MEMORY");
+		expect(() => new MemoryStore(temp()).add("project", "x")).toThrow(/no project memory/);
 	});
 
 	it("scans entries before they reach the system prompt", () => {
@@ -171,6 +228,28 @@ describe("memory extension", () => {
 		expect(last).toContain("[Postgres]");
 		expect(last).toMatch(/refused: the entry looks like a prompt injection/);
 		expect(new MemoryStore(dir).entries("user")).toEqual(["Always answer in British English."]);
+	});
+
+	it("saves project notes and batches through the tool", async () => {
+		const dir = temp();
+		harness = await createHarness(
+			[{ name: "oasis-memory", factory: createMemoryExtension({ dir, sessionsDir: join(dir, "sessions") }) }],
+			[
+				tool("memory", { target: "project", action: "add", content: "API lives in src/api." }),
+				tool("memory", {
+					operations: [
+						{ target: "project", action: "patch", old_text: "src/api", content: "packages/api" },
+						{ target: "user", action: "add", content: "Likes terse answers." },
+					],
+				}),
+				say("Saved."),
+			],
+		);
+		await harness.session.prompt("remember");
+		const store = new MemoryStore(dir, { projectDir: projectMemoryDir(dir, harness.cwd) });
+		expect(store.entries("project")).toEqual(["API lives in packages/api."]);
+		expect(store.entries("user")).toEqual(["Likes terse answers."]);
+		expect(messagesText(harness.calls[2]?.messages ?? [])).toContain("Applied 2 changes.");
 	});
 
 	it("keeps the OASIS identity when memory and identity are both loaded, in production order", async () => {
