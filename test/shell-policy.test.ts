@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateShellCommand } from "../src/extensions/shell-policy.ts";
+import { evaluateShellCommand } from "../src/shell/policy.ts";
 
 const blocked = [
 	"rm -rf /",

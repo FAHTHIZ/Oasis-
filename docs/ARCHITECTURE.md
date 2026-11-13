@@ -23,10 +23,26 @@ Result: the binary is `oasis`, user data lives in `~/.oasis/agent/`, project set
 
 Each extension is a pure function of the pi extension API, registered in `src/extensions/index.ts`.
 
-| File                            | Hooks                                                      | Behaviour                                                                                                                                                                                                    |
-| ------------------------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `verification.ts`               | `tool_result`, `before_agent_start`, `agent_before_settle` | Tracks edited files and check commands. When the run is about to settle with unverified edits, appends one hidden `custom_message` and requests a continuation. Preserves entries added by earlier handlers. |
-| `safety.ts` + `shell-policy.ts` | `tool_call`                                                | Parses `bash` input with unbash, unwraps `sudo`/`env`/`timeout`/etc., walks substitutions and pipelines, and blocks catastrophic commands with a reason the model can read.                                  |
+| File            | Hooks                                                      | Behaviour                                                                                                                                                                                                                                                                                                                                                                       |
+| --------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `turn-gates.ts` | `before_agent_start`, `tool_result`, `agent_before_settle` | Records edits, failed edits and checks into a `TurnLedger` (`src/core/ledger.ts`). When the run is about to settle, runs the gates in `src/core/gates.ts` against the final reply. The first new problem gets one hidden reminder and a continuation; a problem that survives its reminder becomes a visible `oasis.notice` message. At most two continuations per user prompt. |
+| `safety.ts`     | `tool_call`                                                | Blocks catastrophic shell commands using `src/shell/policy.ts`, with a reason the model can read.                                                                                                                                                                                                                                                                               |
+
+### Gates
+
+| Gate                | Fires when                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `failed-edit-claim` | The reply says a file changed, but the edit to it failed and was not redone.                                                                            |
+| `false-pass-claim`  | The reply says tests or builds pass, but no check ran, the last check failed, its exit status was hidden, it did not finish, or files changed after it. |
+| `unverified-edits`  | Files were edited and no passing check ran afterwards, and the reply does not plainly say so.                                                           |
+| `empty-reply`       | The final reply has no text.                                                                                                                            |
+
+### Shell analysis
+
+`src/shell/` parses each command once with unbash and answers two questions:
+
+- `policy.ts`: is this command catastrophic? Wrappers (`sudo`, `env`, `timeout`, ...) are unwrapped and every command inside `&&`, `;`, pipelines, subshells and `$(...)` is checked.
+- `checks.ts`: is this a verification command, and does its exit status reach us? `statusCommands()` in `ast.ts` works out which commands can determine the script's exit status, so `npm test | tail`, `npm test || true`, `npm test; echo done` and `! npm test` count as masked, while `npm test && echo ok` and `set -o pipefail; npm test | tail` do not. Paths like `cat test/foo.js` are not mistaken for test runs.
 
 Rules for new extensions:
 

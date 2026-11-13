@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
-import { evaluateShellCommand } from "./shell-policy.ts";
+import { evaluateShellCommand } from "../shell/policy.ts";
 
 /** Blocks catastrophic shell commands before they run. */
 export function safetyExtension(pi: ExtensionAPI): void {

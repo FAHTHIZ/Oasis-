@@ -78,14 +78,15 @@ Alternatives considered:
 
 These came out of real failures in the old system and are being ported as pi extensions, each with an end-to-end test on the faux provider.
 
-| Behaviour                                                       | Status                                  |
-| --------------------------------------------------------------- | --------------------------------------- |
-| Verification gate (edits without a check)                       | Done                                    |
-| Shell safety policy                                             | Done (AST-based, replaces regex checks) |
-| False completion claims ("tests pass" without running them)     | Next                                    |
-| Empty final reply                                               | Next                                    |
-| Invented tool names                                             | Next                                    |
-| Open todo items at the end of a turn                            | Next                                    |
-| Test tampering detection                                        | Planned                                 |
-| Standing corrections (user corrections remembered across turns) | Planned                                 |
-| Plan mode                                                       | Planned                                 |
+| Behaviour                                                       | Status                                                                |
+| --------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Verification gate (edits without a check)                       | Done; visible "Not verified" notice if the agent ignores the reminder |
+| Shell safety policy                                             | Done (AST-based, replaces regex checks)                               |
+| False completion claims ("tests pass" without running them)     | Done; also catches piped, `\|\|`-masked and unfinished runs           |
+| Empty final reply                                               | Done                                                                  |
+| Claiming a change whose edit failed                             | Done                                                                  |
+| Invented tool names                                             | Next                                                                  |
+| Open todo items at the end of a turn                            | Next                                                                  |
+| Test tampering detection                                        | Planned                                                               |
+| Standing corrections (user corrections remembered across turns) | Planned                                                               |
+| Plan mode                                                       | Planned                                                               |

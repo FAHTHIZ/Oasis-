@@ -31,10 +31,10 @@ Inside the app, run `/login` to sign in to a provider, or set an API key such as
 
 ## What OASIS adds on top of pi
 
-| Extension           | What it does                                                                                                                                                                                                                                       |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Verification gate   | If the agent edits files and tries to finish without running a test, type check, lint or build, it gets one hidden reminder and keeps going.                                                                                                       |
-| Shell safety policy | Every `bash` call is parsed with [unbash](https://github.com/webpro-nl/unbash) and checked as an AST, so `sudo rm -rf /`, `curl … \| sh`, `mkfs`, `dd` to a disk or a fork bomb are blocked even when hidden behind `&&`, `$(…)`, `sudo` or `env`. |
+| Extension           | What it does                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Turn gates          | Before the agent finishes, its reply is checked against what actually happened. Edits with no passing check, "all tests pass" after a failing or piped run, "updated X" when the edit to X failed, and empty replies each get one hidden reminder. If the problem remains, you see a short "Not verified" or "Not done" note instead of a silent false "done". |
+| Shell safety policy | Every `bash` call is parsed with [unbash](https://github.com/webpro-nl/unbash) and checked as an AST, so `sudo rm -rf /`, `curl … \| sh`, `mkfs`, `dd` to a disk or a fork bomb are blocked even when hidden behind `&&`, `$(…)`, `sudo` or `env`.                                                                                                             |
 
 Everything pi provides comes with it: the TUI, sessions as a branching tree, compaction, skills, prompt templates, MCP, codemode, RPC/JSON modes, 20+ model providers and extension packages.
 

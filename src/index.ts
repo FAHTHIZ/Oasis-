@@ -1,4 +1,18 @@
+export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
+export {
+	DEFAULT_GATES,
+	emptyReplyGate,
+	failedEditClaimGate,
+	falsePassClaimGate,
+	type Gate,
+	type GateFinding,
+	type GateInput,
+	runGates,
+	unverifiedEditsGate,
+} from "./core/gates.ts";
+export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { safetyExtension } from "./extensions/safety.ts";
-export { evaluateShellCommand, type ShellVerdict } from "./extensions/shell-policy.ts";
-export { createVerificationExtension, isCheckCommand, VERIFICATION_REMINDER_TYPE } from "./extensions/verification.ts";
+export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
+export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
+export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
