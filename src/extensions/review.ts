@@ -7,11 +7,14 @@
  *   /security-review
  *       Anthropic's security review command (anthropics/claude-code-security-review,
  *       MIT) on the branch's changes against its base.
+ *   /pr-comments [number | url | branch]
+ *       A pull request's comments and inline review threads, via gh.
  *   /init
  *       Codex's prompt for writing an AGENTS.md contributor guide.
  */
 import { execFile } from "node:child_process";
 import { type ExtensionAPI, parseFrontmatter } from "@earendil-works/pi-coding-agent";
+import { fetchPrComments, PR_COMMENTS_INSTRUCTIONS } from "../github/pr-comments.ts";
 import { type BangRunner, expandBangCommands } from "../prompts/bang.ts";
 import { CODEX_INIT_PROMPT, CODEX_REVIEW_RUBRIC } from "../prompts/codex.ts";
 import { SECURITY_REVIEW_COMMAND } from "../prompts/security-review.ts";
@@ -96,6 +99,21 @@ export function createReviewExtension() {
 					send(await securityReviewPrompt(ctx.cwd), ctx.isIdle());
 				} finally {
 					ctx.ui.setStatus?.("security-review", undefined);
+				}
+			},
+		});
+
+		pi.registerCommand("pr-comments", {
+			description: "Bring a GitHub pull request's comments into the conversation: /pr-comments [number | url | branch]",
+			handler: async (args, ctx) => {
+				ctx.ui.setStatus?.("pr-comments", "fetching comments…");
+				try {
+					const comments = await fetchPrComments(args, ctx.cwd);
+					send(`${PR_COMMENTS_INSTRUCTIONS}\n\n${comments}`, ctx.isIdle());
+				} catch (error) {
+					ctx.ui.notify(`Could not fetch PR comments (is gh installed and signed in?): ${(error as Error).message}`, "error");
+				} finally {
+					ctx.ui.setStatus?.("pr-comments", undefined);
 				}
 			},
 		});
