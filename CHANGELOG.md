@@ -4,6 +4,7 @@
 
 ### Added
 
+- Package vetting against slopsquatting, ported from the original OASIS (`src/security/package-vetting.ts`, popularity lists from npm-high-impact, top-pypi-packages and crates.io in `src/security/data/`): bash installs of names missing from npm, PyPI or crates.io are blocked, typosquat lookalikes, brand-new, barely downloaded or OSV-malicious packages need confirmation, and OSV vulnerabilities are noted. `OASIS_PACKAGE_VETTING=0`.
 - Progress guards, ported from the original OASIS agent loop (`src/core/progress.ts`): bash failures with the same fingerprint across rounds of edits get a "fix is not reaching the cause" note (escalating at five), and repeated state-changing commands with no edits since get a repeated-side-effect warning. `OASIS_PROGRESS_GUARD=0`.
 - Early-stop turn gates, ported from the original OASIS turn guards (`src/core/intent.ts`): on a change request where nothing changed, replies that describe the work, announce a next step and stop, give up after a tool error, refuse spuriously, or claim an unmade change get one reminder (and a visible note for unmade-change claims).
 - Git safety snapshots, ported from the original OASIS (`src/security/git-safety.ts`): the working tree and any dropped stash entries are saved under `refs/oasis/safety/` before bash commands that discard work, with restore instructions in the result; the command is blocked when the snapshot fails. `OASIS_GIT_SAFETY=0`.

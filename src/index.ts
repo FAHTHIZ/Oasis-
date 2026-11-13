@@ -93,6 +93,7 @@ export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.t
 export { createNoopEditExtension } from "./extensions/noop-edit.ts";
 export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
+export { createPackageVettingExtension } from "./extensions/package-vetting.ts";
 export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
@@ -138,6 +139,18 @@ export {
 	snapshotNote,
 	snapshotWorkingTree,
 } from "./security/git-safety.ts";
+export {
+	bareName,
+	editDistance,
+	extractInstallTargets,
+	type InstallTarget,
+	type InstallVerdict,
+	nearMiss,
+	pinnedVersion,
+	type VetResult,
+	vetInstallCommand,
+	vetPackage,
+} from "./security/package-vetting.ts";
 export {
 	type ProtectedHit,
 	protectedConfigPath,

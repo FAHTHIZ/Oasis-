@@ -15,6 +15,7 @@ import { createMemoryExtension } from "./memory.ts";
 import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
+import { createPackageVettingExtension } from "./package-vetting.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
 import { createProgressGuardExtension } from "./progress.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
@@ -56,6 +57,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },
 		{ name: "oasis-commit-gate", factory: createCommitGateExtension() },
 		{ name: "oasis-git-safety", factory: createGitSafetyExtension() },
+		{ name: "oasis-package-vetting", factory: createPackageVettingExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
 		// web_fetch, web_search and the untrusted-content guard.
@@ -102,6 +104,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },
 		{ name: "oasis-commit-gate", factory: createCommitGateExtension() },
 		{ name: "oasis-git-safety", factory: createGitSafetyExtension() },
+		{ name: "oasis-package-vetting", factory: createPackageVettingExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
