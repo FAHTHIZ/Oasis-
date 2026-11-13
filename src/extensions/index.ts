@@ -11,6 +11,7 @@ import { createInstructionsExtension } from "./instructions.ts";
 import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
@@ -59,6 +60,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
 		{ name: "oasis-syntax-check", factory: createSyntaxCheckExtension() },
+		{ name: "oasis-noop-edit", factory: createNoopEditExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
@@ -100,6 +102,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
 		{ name: "oasis-syntax-check", factory: createSyntaxCheckExtension() },
+		{ name: "oasis-noop-edit", factory: createNoopEditExtension() },
 		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		{ name: "oasis-notebook", factory: createNotebookExtension() },
 		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },

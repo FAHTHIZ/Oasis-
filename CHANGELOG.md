@@ -4,6 +4,7 @@
 
 ### Added
 
+- No-op edit check, ported from the original OASIS (`src/tools/noop-edit.ts`): scripted in-place edits through bash that exit 0 without changing any named file get a warning in the result. `OASIS_NOOP_EDIT_CHECK=0`.
 - Commit secret gate, ported from the original OASIS (`src/security/commit-gate.ts`): bash `git commit` is blocked when the commit would add a credential, including files the same command stages; the real index is never modified. Diff secret findings are now one per value and line. `OASIS_COMMIT_SECRET_SCAN=0`.
 - Post-edit syntax check, ported from the original OASIS static checks (`src/code/syntax-check.ts`): new syntax errors in code, CSS, JSON, YAML, TOML and HTML (inline scripts and styles, missing local files) are appended to `write`/`edit` results. `OASIS_SYNTAX_CHECK=0`.
 - Jupyter notebooks, ported from the original OASIS: cell-by-cell `read` rendering and the `notebook_edit` tool (`src/tools/notebook.ts`), mapped to Claude Code's `NotebookEdit` for hooks and agent files, checked by the sandbox and protected paths. `OASIS_NOTEBOOK=0`.

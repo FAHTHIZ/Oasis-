@@ -72,6 +72,7 @@ export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } 
 export { oasisExtensions } from "./extensions/index.ts";
 export { createLspExtension } from "./extensions/lsp.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
+export { createNoopEditExtension } from "./extensions/noop-edit.ts";
 export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
@@ -142,6 +143,7 @@ export {
 	type TodoStatus,
 } from "./todo/list.ts";
 export { closestMatchHint, type RelaxedMatch, relaxedMatch } from "./tools/edit-match.ts";
+export { candidatePaths, noOpEditWarning, type ScriptedEditSnapshot, scriptedEditKind, snapshotScriptedEdit } from "./tools/noop-edit.ts";
 export {
 	editNotebook,
 	isNotebookPath,
