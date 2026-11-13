@@ -2,7 +2,7 @@
  * Model-free test harness: a real pi agent session, real tools, a temp
  * workspace, and pi-ai's faux provider replaying scripted model turns.
  */
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { type FauxResponseStep, fauxProvider } from "@earendil-works/pi-ai";
@@ -24,10 +24,14 @@ export interface Harness {
 	dispose(): void;
 }
 
-export async function createHarness(extensions: InlineExtension[], script: FauxResponseStep[]): Promise<Harness> {
+export async function createHarness(
+	extensions: InlineExtension[],
+	script: FauxResponseStep[],
+	options: { models?: string[] } = {},
+): Promise<Harness> {
 	const cwd = mkdtempSync(join(tmpdir(), "oasis-test-"));
 	const agentDir = join(cwd, ".oasis-agent");
-	const faux = fauxProvider({ provider: "faux", models: [{ id: "faux-1" }] });
+	const faux = fauxProvider({ provider: "faux", models: (options.models ?? ["faux-1"]).map((id) => ({ id })) });
 	const calls: { messages: unknown[] }[] = [];
 	faux.setResponses(
 		script.map((step) =>
@@ -39,6 +43,9 @@ export async function createHarness(extensions: InlineExtension[], script: FauxR
 					},
 		),
 	);
+	// Stored credentials count as configured auth, which pi requires for model switches.
+	mkdirSync(agentDir, { recursive: true });
+	writeFileSync(join(agentDir, "auth.json"), JSON.stringify({ faux: { type: "api_key", key: "test-key" } }));
 	const modelRuntime = await ModelRuntime.create({ authPath: join(agentDir, "auth.json"), modelsPath: null, allowModelNetwork: false });
 	modelRuntime.registerNativeProvider(faux.provider);
 	await modelRuntime.setRuntimeApiKey("faux", "test-key");

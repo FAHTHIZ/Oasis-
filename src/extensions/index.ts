@@ -4,6 +4,7 @@ import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createReliabilityExtension } from "./reliability.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
@@ -21,6 +22,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-instructions", factory: createInstructionsExtension() },
 		// Repair rewrites calls when the message ends, so safety, sandbox and gates see the real tool and arguments.
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
+		// Loop detection and model fallback.
+		{ name: "oasis-reliability", factory: createReliabilityExtension() },
 		// Claude Code hooks: PreToolUse may rewrite input, so it runs before safety and sandbox check the call.
 		{ name: "oasis-hooks", factory: createHooksExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
@@ -43,6 +46,8 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-identity", factory: identityExtension },
 		{ name: "oasis-instructions", factory: createInstructionsExtension() },
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
+		// Loop detection and model fallback.
+		{ name: "oasis-reliability", factory: createReliabilityExtension() },
 		{ name: "oasis-hooks", factory: createHooksExtension({ depth }) },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
