@@ -3,6 +3,7 @@ import { createLocalBashOperations } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
 import { createSandboxExtension } from "../src/extensions/sandbox.ts";
 import { BackgroundShells, MAX_BUFFER } from "../src/shell/background.ts";
+import { MonitorFeed, stripControl } from "../src/shell/monitor.ts";
 import { createHarness, type Harness, messagesText } from "./harness.ts";
 
 const tool = (n: string, a: Parameters<typeof fauxToolCall>[1]) => fauxAssistantMessage(fauxToolCall(n, a), { stopReason: "toolUse" });
@@ -48,5 +49,43 @@ describe("background shell", () => {
 		expect(out(4)).toContain("Stopped bash_2.");
 		expect(out(5)).toContain("killed");
 		expect(out(6)).toContain("foreground");
+	});
+
+	it("batches, filters and cleans monitor lines", () => {
+		expect(stripControl("\u001b[31mred\u001b[0m \u001b]0;title\u0007ok\u0001")).toBe("red ok");
+		const feed = new MonitorFeed(/ERR/);
+		feed.push("ok 1\nERR one\nERR t");
+		expect(feed.take()).toBe("ERR one");
+		feed.push("wo\n");
+		feed.end();
+		expect(feed.take()).toBe("ERR two");
+		const big = new MonitorFeed();
+		for (let i = 0; i < 50; i++) big.push(`line ${i}\n`);
+		expect(big.take()).toMatch(/line 39\n\[10 more line\(s\) not shown/);
+		expect(big.take()).toBeUndefined();
+	});
+
+	it("delivers monitor output as events and wakes the idle agent", async () => {
+		const seen: string[] = [];
+		harness = await createHarness(
+			[{ name: "oasis-sandbox", factory: createSandboxExtension({ mode: "off" }) }],
+			[
+				tool("bash", { command: "sleep 0.3; echo READY on port 3000; echo chatter$((40+2))", monitor: true, monitor_filter: "READY" }),
+				fauxAssistantMessage(fauxText("watching")),
+				(context) => {
+					seen.push(messagesText(context.messages.slice(-1)));
+					return fauxAssistantMessage(fauxText("server is up"));
+				},
+				(context) => {
+					seen.push(messagesText(context.messages.slice(-1)));
+					return fauxAssistantMessage(fauxText("noted"));
+				},
+			],
+		);
+		await harness.session.prompt("start the server");
+		for (let i = 0; i < 60 && seen.length < 1; i++) await new Promise((r) => setTimeout(r, 50));
+		await harness.session.waitForIdle();
+		expect(seen[0]).toContain("READY on port 3000");
+		expect(seen.join("\n")).not.toContain("chatter42");
 	});
 });

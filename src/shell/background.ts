@@ -51,7 +51,12 @@ export class BackgroundShells {
 		return this.list().filter((j) => j.status === "running");
 	}
 
-	start(command: string, cwd: string, env?: NodeJS.ProcessEnv): BackgroundJob {
+	start(
+		command: string,
+		cwd: string,
+		env?: NodeJS.ProcessEnv,
+		hooks: { onOutput?: (text: string) => void; onExit?: (job: BackgroundJob) => void } = {},
+	): BackgroundJob {
 		if (this.running().length >= MAX_BACKGROUND)
 			throw new Error(`${MAX_BACKGROUND} background commands are already running; stop one with kill_shell first.`);
 		const id = `bash_${this.next++}`;
@@ -69,7 +74,11 @@ export class BackgroundShells {
 			done: Promise.resolve(),
 		};
 		const onData = (data: Buffer) => {
-			job.output += data.toString("utf8");
+			const chunk = data.toString("utf8");
+			job.output += chunk;
+			try {
+				hooks.onOutput?.(chunk);
+			} catch {}
 			if (job.output.length > MAX_BUFFER) {
 				const cut = job.output.length - MAX_BUFFER;
 				job.output = job.output.slice(cut);
@@ -90,6 +99,9 @@ export class BackgroundShells {
 			.finally(() => {
 				job.ended = Date.now();
 				if (job.status === "running") job.status = "exited";
+				try {
+					hooks.onExit?.(job);
+				} catch {}
 			});
 		this.jobs.set(id, job);
 		return job;

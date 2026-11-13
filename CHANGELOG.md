@@ -4,6 +4,7 @@
 
 ### Added
 
+- Monitors: `bash` with `monitor: true` streams output lines to the agent as events; background commands report when they exit.
 - Claude Code-compatible `statusLine` commands in the footer.
 - Codex/GPT-5 `apply_patch` (V4A) patches are applied as guarded `write` and `bash rm` calls.
 - `/btw` side questions, `/recap`, and an opt-in `advisor` tool backed by a second model.
