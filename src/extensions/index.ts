@@ -5,6 +5,7 @@ import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
 import { createEditMatchExtension } from "./edit-match.ts";
+import { createGitSafetyExtension } from "./git-safety.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
@@ -53,6 +54,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },
 		{ name: "oasis-commit-gate", factory: createCommitGateExtension() },
+		{ name: "oasis-git-safety", factory: createGitSafetyExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
 		// web_fetch, web_search and the untrusted-content guard.
@@ -97,6 +99,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },
 		{ name: "oasis-commit-gate", factory: createCommitGateExtension() },
+		{ name: "oasis-git-safety", factory: createGitSafetyExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },

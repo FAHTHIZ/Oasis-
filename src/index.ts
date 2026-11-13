@@ -68,6 +68,7 @@ export {
 export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
+export { createGitSafetyExtension } from "./extensions/git-safety.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { createLspExtension } from "./extensions/lsp.ts";
@@ -111,6 +112,15 @@ export {
 } from "./security/agent-ignore.ts";
 export { type CommitPlan, commitPlan, commitSecretHits, formatCommitSecretHits } from "./security/commit-gate.ts";
 export {
+	discardingCommand,
+	discardReason,
+	MAX_SAFETY_SNAPSHOTS,
+	pruneSnapshots,
+	type SafetySnapshot,
+	snapshotNote,
+	snapshotWorkingTree,
+} from "./security/git-safety.ts";
+export {
 	type ProtectedHit,
 	protectedConfigPath,
 	protectedConfigTarget,
@@ -128,6 +138,7 @@ export {
 	SecretVault,
 	secretShieldEnabled,
 } from "./security/secrets.ts";
+export { gitInvocation } from "./shell/ast.ts";
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
 export { analyzeShellRisk, isCriticalPath, type ShellRisk } from "./shell/risk.ts";

@@ -150,3 +150,23 @@ export function statusCommands(node: SyntaxNode, pipefail: boolean): Set<SyntaxN
 	visit(node);
 	return out;
 }
+
+/** git options that take a value as the next word. */
+const GIT_VALUE_OPTIONS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env"]);
+
+/** `git [global options] <sub> <rest...>`, or undefined when the command is not git. */
+export function gitInvocation(name: string, args: string[]): { sub: string; rest: string[]; dir?: string } | undefined {
+	if (baseName(name) !== "git") return undefined;
+	let dir: string | undefined;
+	for (let i = 0; i < args.length; i++) {
+		const arg = args[i] ?? "";
+		if (GIT_VALUE_OPTIONS.has(arg)) {
+			if (arg === "-C") dir = args[i + 1];
+			i++;
+			continue;
+		}
+		if (arg.startsWith("-")) continue;
+		return { sub: arg, rest: args.slice(i + 1), dir };
+	}
+	return undefined;
+}

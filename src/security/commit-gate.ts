@@ -10,14 +10,11 @@ import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
-import { baseName, eachCommand, parseShell, unwrap } from "../shell/ast.ts";
+import { eachCommand, gitInvocation, parseShell, unwrap } from "../shell/ast.ts";
 import { type DiffSecret, findSecretsInDiff } from "./secrets.ts";
 
 const EMPTY_TREE = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 const MAX_DIFF = 20 * 1024 * 1024;
-/** git options that take a value as the next word. */
-const GIT_VALUE_OPTIONS = new Set(["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env"]);
-
 export interface CommitPlan {
 	/** The command runs `git commit`. */
 	commit: boolean;
@@ -27,22 +24,6 @@ export interface CommitPlan {
 	stages: boolean;
 	/** `git -C <dir>` of the commit, when given. */
 	dir?: string;
-}
-
-function gitInvocation(name: string, args: string[]): { sub: string; rest: string[]; dir?: string } | undefined {
-	if (baseName(name) !== "git") return undefined;
-	let dir: string | undefined;
-	for (let i = 0; i < args.length; i++) {
-		const arg = args[i] ?? "";
-		if (GIT_VALUE_OPTIONS.has(arg)) {
-			if (arg === "-C") dir = args[i + 1];
-			i++;
-			continue;
-		}
-		if (arg.startsWith("-")) continue;
-		return { sub: arg, rest: args.slice(i + 1), dir };
-	}
-	return undefined;
 }
 
 /** What a shell command line will commit, from its parsed git invocations. */
