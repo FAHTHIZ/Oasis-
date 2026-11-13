@@ -4,6 +4,7 @@
 
 ### Added
 
+- Opt-in auto-commit (`OASIS_AUTO_COMMIT=1`, `/autocommit`): each prompt's file changes become their own Git commit.
 - `read` handles PowerPoint (`.pptx`, slide by slide) and spreadsheets (`.xlsx`, `.xlsm`, `.xls`, `.ods`, each sheet as CSV).
 - Gateway voice notes: with `OASIS_TRANSCRIBE` (groq, openai or a whisper server URL) audio sent in chat is transcribed into the prompt.
 - Claude Code plugins: `/plugin` marketplaces and installs; plugin skills, commands, subagents, hooks and MCP servers load, including plugins enabled in Claude Code.

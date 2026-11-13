@@ -92,6 +92,7 @@ export { extractDocument, isDocument, renderDocument } from "./documents/extract
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
 export { createAiCommentsExtension } from "./extensions/ai-comments.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";
+export { createAutoCommitExtension } from "./extensions/auto-commit.ts";
 export {
 	CHECKPOINT_TYPE,
 	type CheckpointData,
@@ -137,6 +138,14 @@ export { createDiscordGateway, DISCORD_MAX_MESSAGE, stripDiscordMention } from "
 export { createSlackGateway, SLACK_MAX_MESSAGE, slackChatKey, stripSlackMention } from "./gateway/slack.ts";
 export { addressedText, createTelegramGateway, TELEGRAM_MAX_MESSAGE } from "./gateway/telegram.ts";
 export { createTranscriber, isAudio, type Transcriber, transcriberConfig, transcriberFromEnv } from "./gateway/transcribe.ts";
+export {
+	type AutoCommitResult,
+	autoCommitTurn,
+	changedPaths,
+	commitSubject,
+	describeAutoCommit,
+	dirtySnapshot,
+} from "./git/auto-commit.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";

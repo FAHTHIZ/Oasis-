@@ -3,6 +3,7 @@ import { createAgentIgnoreExtension } from "./agent-ignore.ts";
 import { createAiCommentsExtension } from "./ai-comments.ts";
 import { createAskUserExtension } from "./ask-user.ts";
 import { createAstGrepExtension } from "./ast-grep.ts";
+import { createAutoCommitExtension } from "./auto-commit.ts";
 import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
@@ -106,6 +107,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-documents", factory: createDocumentsExtension() },
 		{ name: "oasis-mcp-presets", factory: createMcpPresetsExtension() },
 		{ name: "oasis-plugins", factory: createPluginsExtension() },
+		{ name: "oasis-auto-commit", factory: createAutoCommitExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
