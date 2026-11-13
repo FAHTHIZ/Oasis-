@@ -349,12 +349,13 @@ async function scanFile(absolute: string, rel: string, disk: DiskCache | null, e
 }
 
 /** Source files under `base`: git's view (tracked and untracked, not ignored) when available, else a directory walk. */
-export function listSourceFiles(base: string, maxFiles = MAX_FILES): string[] {
+export function listSourceFiles(
+	base: string,
+	maxFiles = MAX_FILES,
+	accept: (rel: string) => boolean = (rel) => Boolean(languageForFile(rel)),
+): string[] {
 	const keep = (rel: string) =>
-		Boolean(languageForFile(rel)) &&
-		!SENSITIVE.test(rel) &&
-		!rel.split("/").some((part) => SKIP_DIRS.has(part)) &&
-		!rel.endsWith(".min.js");
+		accept(rel) && !SENSITIVE.test(rel) && !rel.split("/").some((part) => SKIP_DIRS.has(part)) && !rel.endsWith(".min.js");
 	try {
 		const out = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
 			cwd: base,

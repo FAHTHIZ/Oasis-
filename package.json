@@ -44,6 +44,10 @@
 	},
 	"dependencies": {
 		"@anthropic-ai/sandbox-runtime": "0.0.83",
+		"@ast-grep/lang-go": "^0.0.6",
+		"@ast-grep/lang-python": "^0.0.6",
+		"@ast-grep/lang-rust": "^0.0.7",
+		"@ast-grep/napi": "^0.51.2",
 		"@earendil-works/pi-agent-core": "1.5.2",
 		"@earendil-works/pi-ai": "1.5.2",
 		"@earendil-works/pi-coding-agent": "1.5.2",

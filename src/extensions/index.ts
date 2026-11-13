@@ -1,4 +1,5 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
+import { createAstGrepExtension } from "./ast-grep.ts";
 import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
 import { createEditMatchExtension } from "./edit-match.ts";
@@ -51,6 +52,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
+		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
@@ -87,6 +89,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
 		{ name: "oasis-lsp", factory: createLspExtension() },
+		{ name: "oasis-ast-grep", factory: createAstGrepExtension() },
 		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },
 		...(depth < MAX_DEPTH
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]

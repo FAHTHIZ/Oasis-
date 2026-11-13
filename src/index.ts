@@ -11,6 +11,17 @@ export {
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
 export { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./code/ast.ts";
 export {
+	AST_GREP_STRICTNESS,
+	type AstGrepArgs,
+	type AstGrepResult,
+	applyReplacements,
+	astGrepLanguages,
+	editsForChange,
+	formatAstGrep,
+	loadAstGrep,
+	runAstGrep,
+} from "./code/ast-grep.ts";
+export {
 	BUILTIN_SERVERS,
 	type CustomServer,
 	type Diagnostic,
@@ -44,6 +55,7 @@ export {
 } from "./core/gates.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
+export { createAstGrepExtension } from "./extensions/ast-grep.ts";
 export {
 	CHECKPOINT_TYPE,
 	type CheckpointData,
