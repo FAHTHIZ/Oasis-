@@ -5,6 +5,7 @@ import { createAskUserExtension } from "./ask-user.ts";
 import { createAstGrepExtension } from "./ast-grep.ts";
 import { createAutoCommitExtension } from "./auto-commit.ts";
 import { createCheckpointsExtension } from "./checkpoints.ts";
+import { createCommandBangsExtension } from "./command-bangs.ts";
 import { createCommitGateExtension } from "./commit-gate.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
 import { createCronExtension } from "./cron.ts";
@@ -34,6 +35,7 @@ import { createProgressGuardExtension } from "./progress.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { createRepoMapExtension } from "./repo-map.ts";
+import { createReviewExtension } from "./review.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
 import { createScratchExtension } from "./scratch.ts";
@@ -108,6 +110,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-mcp-presets", factory: createMcpPresetsExtension() },
 		{ name: "oasis-plugins", factory: createPluginsExtension() },
 		{ name: "oasis-auto-commit", factory: createAutoCommitExtension() },
+		{ name: "oasis-review", factory: createReviewExtension() },
+		{ name: "oasis-command-bangs", factory: createCommandBangsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

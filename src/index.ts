@@ -101,6 +101,7 @@ export {
 	createCheckpointsExtension,
 	RESTORE_TYPE,
 } from "./extensions/checkpoints.ts";
+export { createCommandBangsExtension } from "./extensions/command-bangs.ts";
 export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
 export { createCronExtension } from "./extensions/cron.ts";
@@ -119,6 +120,7 @@ export { createPermissionsExtension } from "./extensions/permissions.ts";
 export { createPluginsExtension, PLUGIN_USAGE, type PluginsOptions } from "./extensions/plugins.ts";
 export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
+export { createReviewExtension, reviewBase, reviewInstructions, reviewTarget, securityReviewPrompt } from "./extensions/review.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
@@ -158,6 +160,9 @@ export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryT
 export { type ActivePluginComponents, activePluginComponents } from "./plugins/active.ts";
 export { expandPluginVars, loadPluginComponents, type PluginComponents, readManifest } from "./plugins/components.ts";
 export { claudeCodePlugins, gitUrl, PluginStore, readMarketplace } from "./plugins/store.ts";
+export { type BangRunner, expandBangCommands, hasBangCommands, substituteTemplateArgs } from "./prompts/bang.ts";
+export { CODEX_INIT_PROMPT, CODEX_REVIEW_RUBRIC } from "./prompts/codex.ts";
+export { SECURITY_REVIEW_COMMAND } from "./prompts/security-review.ts";
 export {
 	buildRuntimePolicy,
 	DEFAULT_ALLOWED_DOMAINS,
