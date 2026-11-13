@@ -4,6 +4,7 @@
 
 ### Added
 
+- Claude Code-compatible `statusLine` commands in the footer.
 - Codex/GPT-5 `apply_patch` (V4A) patches are applied as guarded `write` and `bash rm` calls.
 - `/btw` side questions, `/recap`, and an opt-in `advisor` tool backed by a second model.
 - Session messaging: `/peers`, `/notify` and the `session_message` tool for coordinating live sessions in one workspace.

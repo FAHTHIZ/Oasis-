@@ -14,6 +14,7 @@ import { dirname, join, resolve } from "node:path";
 export const MAX_MESSAGE_CHARS = 4000;
 export const MAX_SENDS_PER_MINUTE = 12;
 const ID = /^[A-Za-z0-9_-]{6,100}$/;
+let sequence = 0;
 
 export type MessagePriority = "info" | "warning" | "blocking";
 
@@ -179,7 +180,10 @@ export class SessionMessenger {
 				.filter(Boolean)
 				.slice(0, 30),
 		};
-		writeJson(join(this.root, "inbox", to.id, `${message.timestamp.replace(/[:.]/g, "-")}-${message.id}.json`), message);
+		// Sortable names: time, then a per-process sequence for sends within one millisecond.
+		sequence = (sequence + 1) % 1_000_000;
+		const stamp = `${String(this.now()).padStart(15, "0")}-${String(sequence).padStart(6, "0")}`;
+		writeJson(join(this.root, "inbox", to.id, `${stamp}-${message.id}.json`), message);
 		return { id: message.id, to };
 	}
 
