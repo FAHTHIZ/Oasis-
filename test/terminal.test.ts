@@ -36,7 +36,6 @@ describe("pty helpers", () => {
 });
 
 describe("terminal tool", () => {
-
 	it("checks a command assembled across separate writes before sending Enter", async () => {
 		harness = await createHarness(
 			[{ name: "term", factory: createTerminalExtension({ wrap: async (c) => c }) }],

@@ -71,7 +71,7 @@ export function createTerminalExtension(options: { spawner?: PtySpawner; wrap?: 
 			name: "terminal",
 			label: "Terminal",
 			description:
-				"Run an interactive program in a pseudo-terminal and talk to it: REPLs (python, node, psql), installers and CLIs that prompt, TUIs, debuggers, dev servers. action=start runs `command` and returns its first output and an id; action=write types `input` (add \\n to press Enter) and/or presses `keys` (enter, tab, up, down, ctrl-c, ctrl-d, escape…), then returns the new output; action=read returns output since the last read; action=kill stops it; action=list shows sessions. For ordinary non-interactive commands use bash instead.",
+				"Run an interactive program in a pseudo-terminal and talk to it: REPLs (python, node, psql), installers and CLIs that prompt, TUIs, debuggers, dev servers. action=start runs `command` and returns its first output and an id; action=write types `input` (add \\n to press Enter) and/or presses `keys` (enter, tab, up, down, ctrl-c, ctrl-d, escape…), then returns new output; action=read returns output since the last read; action=kill stops it; action=list shows sessions. For ordinary non-interactive commands use bash instead. Shell safety checks cover complete text lines, but terminal apps may interpret control/history keys or non-shell input independently; use the configured sandbox as the isolation boundary.",
 			promptSnippet: "Drive interactive programs in a pseudo-terminal",
 			parameters: Type.Object({
 				action: Type.Union([

@@ -59,7 +59,7 @@ export function createRunLimitsExtension(options: { maxTurns?: number; maxBudget
 				try {
 					schema = loadOutputSchema(raw, ctx.cwd);
 				} catch (error) {
-					 schemaError = (error as Error).message;
+					schemaError = (error as Error).message;
 					ctx.ui.notify(`--output-schema: ${schemaError}`, "error");
 				}
 			}

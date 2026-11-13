@@ -29,7 +29,6 @@ describe("output schema", () => {
 		expect(checkAnswer(check, "nothing")).toMatchObject({ ok: false });
 	});
 
-
 	it("fails closed when the requested schema cannot be loaded", async () => {
 		const notices: string[] = [];
 		harness = await createHarness(
@@ -40,7 +39,7 @@ describe("output schema", () => {
 		await harness.session.prompt("answer with JSON");
 		expect(harness.calls).toHaveLength(0);
 		expect(process.exitCode).toBe(1);
-		expect(notices.join("\\n")).toContain("--output-schema:");
+		expect(notices.join("\n")).toContain("--output-schema:");
 	});
 
 	it("sends an invalid answer back with the errors", async () => {
