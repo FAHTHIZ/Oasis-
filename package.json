@@ -57,6 +57,7 @@
 		"defuddle": "0.19.6",
 		"diff": "9.0.0",
 		"domhandler": "6.0.1",
+		"grammy": "^1.46.0",
 		"htmlparser2": "12.0.0",
 		"ignore": "^7.0.14",
 		"ipaddr.js": "2.5.0",

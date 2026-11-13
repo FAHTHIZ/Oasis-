@@ -123,6 +123,16 @@ export { createSyntaxCheckExtension } from "./extensions/syntax-check.ts";
 export { todoExtension } from "./extensions/todo.ts";
 export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
+export {
+	ChatGateway,
+	chunkText,
+	GATEWAY_HELP,
+	type GatewayMessage,
+	type GatewayOptions,
+	type GatewaySession,
+	parseAllowlist,
+} from "./gateway/core.ts";
+export { addressedText, createTelegramGateway, TELEGRAM_MAX_MESSAGE } from "./gateway/telegram.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
