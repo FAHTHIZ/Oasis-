@@ -35,6 +35,7 @@ import { createSandboxExtension } from "./sandbox.ts";
 import { createScratchExtension } from "./scratch.ts";
 import { createSecretShieldExtension } from "./secret-shield.ts";
 import { createSessionMessagesExtension } from "./session-messages.ts";
+import { createSideQuestionsExtension } from "./side-questions.ts";
 import { createSkillsExtension } from "./skills.ts";
 import { createStandingCorrectionsExtension } from "./standing-corrections.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
@@ -96,6 +97,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-followups", factory: createFollowupsExtension() },
 		{ name: "oasis-output-styles", factory: createOutputStylesExtension() },
 		{ name: "oasis-session-messages", factory: createSessionMessagesExtension() },
+		{ name: "oasis-side-questions", factory: createSideQuestionsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

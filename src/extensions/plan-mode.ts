@@ -40,6 +40,7 @@ const READ_TOOLS = new Set([
 	"ask_user_question",
 	"task_output",
 	"session_message",
+	"advisor",
 	"bash_output",
 	"kill_shell",
 ]);

@@ -80,6 +80,7 @@ export {
 } from "./core/progress.ts";
 export { applySafeMode, isSafeMode, SAFE_MODE_NOTICE, SAFE_MODE_PI_FLAGS } from "./core/safe-mode.ts";
 export { formatSessionMessages, type SessionMessage, SessionMessenger } from "./core/session-messages.ts";
+export { ADVISOR_SYSTEM, askSide, branchMessages, SIDE_SYSTEM } from "./core/side-model.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
 export { cronCli } from "./cron/cli.ts";
 export { agentPrompt, defaultOasisCommand, type RunnerOptions, runJob, runNow, SILENT_MARKER, tick } from "./cron/runner.ts";
