@@ -24,7 +24,9 @@ describe("pty helpers", () => {
 	it("waits for a first output chunk that arrives after the initial quiet period", async () => {
 		let emit: ((data: string) => void) | undefined;
 		const proc = {
-			onData(listener: (data: string) => void) { emit = listener; },
+			onData(listener: (data: string) => void) {
+				emit = listener;
+			},
 			onExit() {},
 			write() {},
 			kill() {},
