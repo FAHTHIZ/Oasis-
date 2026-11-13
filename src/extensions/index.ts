@@ -18,6 +18,7 @@ import { createGitSafetyExtension } from "./git-safety.ts";
 import { createGoalExtension } from "./goal.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
+import { createImageGenerateExtension } from "./image-generate.ts";
 import { createInsightsExtension } from "./insights.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createLspExtension } from "./lsp.ts";
@@ -117,6 +118,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-command-bangs", factory: createCommandBangsExtension() },
 		{ name: "oasis-context-view", factory: createContextViewExtension() },
 		{ name: "oasis-insights", factory: createInsightsExtension() },
+		{ name: "oasis-image-generate", factory: createImageGenerateExtension() },
 		{ name: "oasis-run-limits", factory: createRunLimitsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
