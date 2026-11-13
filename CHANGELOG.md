@@ -4,6 +4,8 @@
 
 ### Added
 
+- Sandbox extension: shell commands run inside @anthropic-ai/sandbox-runtime with `workspace-write` (default), `read-only` and `off` modes; credential files unreadable, network limited to an allowlist with interactive approval of other hosts; `write`/`edit` blocked outside writable roots; `/sandbox` status command. zod is pinned to 4.6.7 through npm overrides to clear GHSA-mrhx-c7xc-m3w5 pulled in by sandbox-runtime.
+
 - Identity extension: the model is told it is OASIS (not "running inside pi") and gets OASIS's working rules as prompt guidelines.
 
 - Ground-up rebuild of OASIS on the pi coding-agent SDK (`@earendil-works/pi-coding-agent` 1.5.2).

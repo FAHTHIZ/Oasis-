@@ -49,30 +49,30 @@ Alternatives considered:
 
 ## Components by layer
 
-| Layer                            | Choice                            | Version | Licence    | Why                                                                                                               |
-| -------------------------------- | --------------------------------- | ------- | ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| Agent loop, sessions, TUI, tools | `@earendil-works/pi-coding-agent` | 1.5.2   | MIT        | See above.                                                                                                        |
-| Model providers                  | `@earendil-works/pi-ai`           | 1.5.2   | MIT        | 20+ providers, OAuth, cost tracking, faux provider for tests.                                                     |
-| Shell parsing for policy         | `unbash`                          | 6.0.4   | MIT        | Typed Bash 5.3 AST, zero dependencies, synchronous, recursively parses `$(…)`; 10x+ faster than tree-sitter-bash. |
-| Schemas                          | `typebox`                         | 1.4.7   | MIT        | What pi tools use natively.                                                                                       |
-| Build                            | `tsdown`                          | 0.23.7  | MIT        | Rolldown-based bundler with declaration output.                                                                   |
-| Type checking                    | `typescript`                      | 5.9.3   | Apache-2.0 | Stable `tsc`; revisit TypeScript 7 (native) once its API settles.                                                 |
-| Lint and format                  | `@biomejs/biome`                  | 2.6.7   | MIT        | One fast tool for both.                                                                                           |
-| Tests                            | `vitest`                          | 5.1.0   | MIT        | Fast, TypeScript-native.                                                                                          |
+| Layer                            | Choice                            | Version | Licence    | Why                                                                                                                                                                                                                      |
+| -------------------------------- | --------------------------------- | ------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Agent loop, sessions, TUI, tools | `@earendil-works/pi-coding-agent` | 1.5.2   | MIT        | See above.                                                                                                                                                                                                               |
+| Model providers                  | `@earendil-works/pi-ai`           | 1.5.2   | MIT        | 20+ providers, OAuth, cost tracking, faux provider for tests.                                                                                                                                                            |
+| Shell parsing for policy         | `unbash`                          | 6.0.4   | MIT        | Typed Bash 5.3 AST, zero dependencies, synchronous, recursively parses `$(…)`; 10x+ faster than tree-sitter-bash.                                                                                                        |
+| OS sandbox                       | `@anthropic-ai/sandbox-runtime`   | 0.0.83  | Apache-2.0 | What Claude Code uses: Seatbelt on macOS, bubblewrap on Linux, filtering network proxy with a per-host ask callback. Codex's Landlock/Seatbelt layer is Rust-only; Docker-based isolation is heavier and needs a daemon. |
+| Schemas                          | `typebox`                         | 1.4.7   | MIT        | What pi tools use natively.                                                                                                                                                                                              |
+| Build                            | `tsdown`                          | 0.23.7  | MIT        | Rolldown-based bundler with declaration output.                                                                                                                                                                          |
+| Type checking                    | `typescript`                      | 5.9.3   | Apache-2.0 | Stable `tsc`; revisit TypeScript 7 (native) once its API settles.                                                                                                                                                        |
+| Lint and format                  | `@biomejs/biome`                  | 2.6.7   | MIT        | One fast tool for both.                                                                                                                                                                                                  |
+| Tests                            | `vitest`                          | 5.1.0   | MIT        | Fast, TypeScript-native.                                                                                                                                                                                                 |
 
 ### Planned components
 
-| Layer                | Candidate                                                           | Version checked | Notes                                                                                   |
-| -------------------- | ------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------- |
-| OS sandbox           | `@anthropic-ai/sandbox-runtime`                                     | 0.0.83          | Seatbelt on macOS, bubblewrap on Linux, network allowlist proxy; what Claude Code uses. |
-| MCP                  | `@earendil-works/pi-mcp` (wraps `@modelcontextprotocol/sdk` 1.32.2) | 1.5.2           | Already bundled with pi.                                                                |
-| Editor protocol      | `@agentclientprotocol/sdk`                                          | 2.6.0           | ACP server so Zed, JetBrains and others can drive OASIS.                                |
-| Memory search        | `better-sqlite3` with FTS5                                          | 13.1.1          | Same approach as Hermes session search.                                                 |
-| Code search          | `@vscode/ripgrep`                                                   | 1.18.0          | Bundled ripgrep binary.                                                                 |
-| Code structure       | `web-tree-sitter`                                                   | 0.27.2          | Repo maps and symbol-aware edits.                                                       |
-| HTTP server / web UI | `hono`                                                              | 4.13.18         | For the API server and gateways.                                                        |
-| Git                  | `simple-git`                                                        | 4.0.2           | Checkpoints and worktrees for sub-agents.                                               |
-| Diffs                | `diff`                                                              | 9.0.0           | Review artifacts.                                                                       |
+| Layer                | Candidate                                                           | Version checked | Notes                                                    |
+| -------------------- | ------------------------------------------------------------------- | --------------- | -------------------------------------------------------- |
+| MCP                  | `@earendil-works/pi-mcp` (wraps `@modelcontextprotocol/sdk` 1.32.2) | 1.5.2           | Already bundled with pi.                                 |
+| Editor protocol      | `@agentclientprotocol/sdk`                                          | 2.6.0           | ACP server so Zed, JetBrains and others can drive OASIS. |
+| Memory search        | `better-sqlite3` with FTS5                                          | 13.1.1          | Same approach as Hermes session search.                  |
+| Code search          | `@vscode/ripgrep`                                                   | 1.18.0          | Bundled ripgrep binary.                                  |
+| Code structure       | `web-tree-sitter`                                                   | 0.27.2          | Repo maps and symbol-aware edits.                        |
+| HTTP server / web UI | `hono`                                                              | 4.13.18         | For the API server and gateways.                         |
+| Git                  | `simple-git`                                                        | 4.0.2           | Checkpoints and worktrees for sub-agents.                |
+| Diffs                | `diff`                                                              | 9.0.0           | Review artifacts.                                        |
 
 ## Behaviours carried over from old OASIS
 

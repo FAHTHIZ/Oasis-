@@ -64,6 +64,8 @@ export async function createHarness(extensions: InlineExtension[], script: FauxR
 		settingsManager,
 		sessionManager: SessionManager.inMemory(cwd),
 	});
+	// pi's own modes bind extensions before the first prompt; this emits session_start.
+	await session.bindExtensions({ mode: "print" });
 	return {
 		session,
 		cwd,
