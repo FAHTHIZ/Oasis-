@@ -16,6 +16,7 @@ import { createInstructionsExtension } from "./instructions.ts";
 import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createModelRoutingExtension } from "./model-routing.ts";
 import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
@@ -54,6 +55,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
 		// Loop detection and model fallback.
 		{ name: "oasis-reliability", factory: createReliabilityExtension() },
+		// Simple read-only questions go to the configured cheaper model (off unless OASIS_EASY_MODEL is set).
+		{ name: "oasis-model-routing", factory: createModelRoutingExtension() },
 		// Claude Code hooks: PreToolUse may rewrite input, so it runs before safety and sandbox check the call.
 		{ name: "oasis-hooks", factory: createHooksExtension() },
 		// Plan mode blocks changes before safety and sandbox prompt for them.

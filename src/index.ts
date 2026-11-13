@@ -66,6 +66,7 @@ export {
 	refusesSpuriously,
 } from "./core/intent.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
+export { classifyTask, type RouteDecision } from "./core/model-routing.ts";
 export {
 	CommandProgress,
 	failureSignature,
