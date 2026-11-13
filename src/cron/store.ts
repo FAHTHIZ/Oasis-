@@ -8,9 +8,11 @@
  * one store. A job is claimed (runningSince) before it runs, so two tickers
  * never start the same slot twice.
  */
+
 import { randomUUID } from "node:crypto";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { parseDeliveryTarget } from "../gateway/deliver.ts";
 import { graceMs, nextRun, parseSchedule, type Schedule } from "./schedule.ts";
 
 export const MAX_JOBS = 200;
@@ -28,6 +30,8 @@ export interface CronJob {
 	cwd: string;
 	model?: string;
 	skills?: string[];
+	/** Chat that results are sent to, e.g. "telegram:12345" (src/gateway/deliver.ts). */
+	deliver?: string;
 	/** Stop after this many runs (one-shot jobs: 1). */
 	repeat?: number;
 	runs: number;
@@ -52,6 +56,8 @@ export interface CronRun {
 	output?: string;
 	silent?: boolean;
 	error?: string;
+	/** Set when sending the result to the job's chat failed. */
+	deliveryError?: string;
 }
 
 export interface CreateJobInput {
@@ -63,10 +69,21 @@ export interface CreateJobInput {
 	cwd: string;
 	model?: string;
 	skills?: string[];
+	deliver?: string;
 	repeat?: number;
 }
 
 export class CronError extends Error {}
+
+function checkDeliver(value: string | undefined): string | undefined {
+	if (!value?.trim()) return undefined;
+	try {
+		parseDeliveryTarget(value);
+	} catch (error) {
+		throw new CronError((error as Error).message);
+	}
+	return value.trim();
+}
 
 const sleep = (ms: number) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 
@@ -144,6 +161,7 @@ export class CronStore {
 			cwd: input.cwd,
 			model: input.model,
 			skills: input.skills?.length ? input.skills : undefined,
+			deliver: checkDeliver(input.deliver),
 			repeat: schedule.kind === "once" ? 1 : input.repeat && input.repeat > 0 ? Math.floor(input.repeat) : undefined,
 			runs: 0,
 			paused: false,
@@ -176,6 +194,7 @@ export class CronStore {
 			}
 			if (patch.model !== undefined) job.model = patch.model || undefined;
 			if (patch.skills !== undefined) job.skills = patch.skills.length ? patch.skills : undefined;
+			if (patch.deliver !== undefined) job.deliver = checkDeliver(patch.deliver);
 			if (patch.repeat !== undefined) job.repeat = patch.repeat > 0 ? Math.floor(patch.repeat) : undefined;
 			if (patch.schedule !== undefined || patch.timezone !== undefined) {
 				const tz = patch.timezone ?? (job.schedule.kind === "cron" ? job.schedule.timezone : undefined);

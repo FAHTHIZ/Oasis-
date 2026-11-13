@@ -13,6 +13,7 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
+import { createDeliver, type Deliver } from "../gateway/deliver.ts";
 import { type CronJob, type CronRun, CronStore } from "./store.ts";
 
 export const DEFAULT_TIMEOUT_MS = 30 * 60_000;
@@ -25,6 +26,8 @@ export interface RunnerOptions {
 	timeoutMs?: number;
 	env?: NodeJS.ProcessEnv;
 	now?: () => Date;
+	/** Sends results to a job's chat; default: the platform clients in src/gateway/deliver.ts. */
+	deliver?: Deliver;
 }
 
 export function defaultOasisCommand(env: NodeJS.ProcessEnv = process.env): string[] {
@@ -83,6 +86,15 @@ function exec(
 	});
 }
 
+const MAX_DELIVERY_CHARS = 12_000;
+
+export function deliveryText(job: CronJob, run: CronRun): string {
+	const head = run.status === "ok" ? `[${job.name}]` : `[${job.name}] ${run.status}${run.error ? `: ${run.error}` : ""}`;
+	let body = run.output ?? "";
+	if (body.length > MAX_DELIVERY_CHARS) body = `…${body.slice(-MAX_DELIVERY_CHARS)}`;
+	return body ? `${head}\n${body}` : head;
+}
+
 export async function runJob(store: CronStore, job: CronJob, options: RunnerOptions = {}): Promise<CronRun> {
 	const now = options.now ?? (() => new Date());
 	const started = now();
@@ -113,6 +125,14 @@ export async function runJob(store: CronStore, job: CronJob, options: RunnerOpti
 			result.error ??
 			(result.timedOut ? `timed out after ${Math.round(timeoutMs / 1000)}s` : status === "error" ? `exit code ${result.code}` : undefined),
 	};
+	if (job.deliver && !run.silent) {
+		try {
+			const deliver = options.deliver ?? createDeliver(env);
+			await deliver(job.deliver, deliveryText(job, run));
+		} catch (error) {
+			run.deliveryError = error instanceof Error ? error.message : String(error);
+		}
+	}
 	store.finish(job.id, run, now());
 	return run;
 }

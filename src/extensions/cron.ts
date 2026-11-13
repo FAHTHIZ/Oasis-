@@ -66,6 +66,12 @@ export function createCronExtension(options: CronOptions = {}) {
 				model: Type.Optional(Type.String({ description: "Model for agent runs (provider/id)." })),
 				skills: Type.Optional(Type.Array(Type.String(), { description: "Skills the run should load first." })),
 				repeat: Type.Optional(Type.Number({ description: "Stop after this many runs." })),
+				deliver: Type.Optional(
+					Type.String({
+						description:
+							'Send each result to a chat: "telegram:<chat id>", "discord:<channel id>" or "slack:<channel id>". Empty string clears it.',
+					}),
+				),
 			}),
 			async execute(_id, params, _signal, _update, ctx) {
 				const s = store();
@@ -88,6 +94,7 @@ export function createCronExtension(options: CronOptions = {}) {
 								cwd: ctx.cwd,
 								model: params.model,
 								skills: params.skills,
+								deliver: params.deliver,
 								repeat: params.repeat,
 							});
 							const where =
@@ -109,6 +116,7 @@ export function createCronExtension(options: CronOptions = {}) {
 								timezone: params.timezone,
 								model: params.model,
 								skills: params.skills,
+								deliver: params.deliver,
 								repeat: params.repeat,
 							});
 							return text(`Updated.\n${describeJob(job)}`, { job });

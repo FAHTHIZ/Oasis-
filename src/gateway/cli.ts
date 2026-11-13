@@ -30,7 +30,7 @@ export async function gatewayCli(argv: string[], env: NodeJS.ProcessEnv = proces
 	const common = {
 		allowedUsers,
 		agentDir,
-		openSession: sessionOpener(process.cwd(), agentDir),
+		openSession: sessionOpener(process.cwd(), agentDir, platform),
 		log: (line: string) => console.error(line),
 	};
 	let runner: Runner;
