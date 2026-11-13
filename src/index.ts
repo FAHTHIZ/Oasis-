@@ -199,6 +199,7 @@ export {
 	secretShieldEnabled,
 } from "./security/secrets.ts";
 export { gitInvocation } from "./shell/ast.ts";
+export { type BackgroundJob, BackgroundShells, describeJob as describeBackgroundJob } from "./shell/background.ts";
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
 export { analyzeShellRisk, isCriticalPath, type ShellRisk } from "./shell/risk.ts";

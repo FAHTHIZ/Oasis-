@@ -36,6 +36,9 @@ const READ_TOOLS = new Set([
 	"ast_grep",
 	"todo",
 	"exit_plan_mode",
+	// Reading or stopping the agent's own background commands changes nothing in the workspace.
+	"bash_output",
+	"kill_shell",
 ]);
 
 const READ_ONLY_AGENTS = new Set(["explore", "explorer", "plan", "planner"]);

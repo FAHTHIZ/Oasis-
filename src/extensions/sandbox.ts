@@ -18,6 +18,7 @@ import {
 	SANDBOX_MODES,
 	type SandboxMode,
 } from "../sandbox/policy.ts";
+import { registerBashWithBackground } from "./background-shell.ts";
 
 export interface SandboxState {
 	mode: SandboxMode;
@@ -65,7 +66,8 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 				return local.exec(wrapped, cwd, execOptions);
 			},
 		};
-		pi.registerTool(createBashToolDefinition(process.cwd(), { operations }));
+		// bash with run_in_background, plus bash_output and kill_shell, all through the sandboxed operations.
+		registerBashWithBackground(pi, createBashToolDefinition(process.cwd(), { operations }), operations);
 
 		pi.on("session_start", async (_event, ctx) => {
 			uiContext = ctx;
