@@ -1,0 +1,60 @@
+{
+	"name": "oasis-agent",
+	"version": "0.1.0",
+	"description": "OASIS: a coding agent built on the pi engine, with verification gates, safety policy and memory as first-class extensions.",
+	"type": "module",
+	"license": "MIT",
+	"author": "FAHTHIZ",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/FAHTHIZ/Oasis-.git"
+	},
+	"bin": {
+		"oasis": "bin/oasis.mjs"
+	},
+	"main": "dist/index.mjs",
+	"types": "dist/index.d.mts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.mts",
+			"default": "./dist/index.mjs"
+		}
+	},
+	"files": [
+		"bin",
+		"dist",
+		"README.md",
+		"LICENSE"
+	],
+	"engines": {
+		"node": ">=22.19.0"
+	},
+	"piConfig": {
+		"name": "oasis",
+		"configDir": ".oasis"
+	},
+	"scripts": {
+		"build": "tsdown && node scripts/copy-pi-assets.mjs",
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check .",
+		"format": "biome format --write .",
+		"test": "vitest run",
+		"check": "npm run lint && npm run typecheck && npm test",
+		"prepack": "npm run build"
+	},
+	"dependencies": {
+		"@earendil-works/pi-agent-core": "1.5.2",
+		"@earendil-works/pi-ai": "1.5.2",
+		"@earendil-works/pi-coding-agent": "1.5.2",
+		"@earendil-works/pi-tui": "1.5.2",
+		"typebox": "1.4.7",
+		"unbash": "6.0.4"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.7",
+		"@types/node": "22.20.5",
+		"tsdown": "0.23.7",
+		"typescript": "5.9.3",
+		"vitest": "5.1.0"
+	}
+}
