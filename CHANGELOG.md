@@ -4,6 +4,7 @@
 
 ### Added
 
+- Commit secret gate, ported from the original OASIS (`src/security/commit-gate.ts`): bash `git commit` is blocked when the commit would add a credential, including files the same command stages; the real index is never modified. Diff secret findings are now one per value and line. `OASIS_COMMIT_SECRET_SCAN=0`.
 - Post-edit syntax check, ported from the original OASIS static checks (`src/code/syntax-check.ts`): new syntax errors in code, CSS, JSON, YAML, TOML and HTML (inline scripts and styles, missing local files) are appended to `write`/`edit` results. `OASIS_SYNTAX_CHECK=0`.
 - Jupyter notebooks, ported from the original OASIS: cell-by-cell `read` rendering and the `notebook_edit` tool (`src/tools/notebook.ts`), mapped to Claude Code's `NotebookEdit` for hooks and agent files, checked by the sandbox and protected paths. `OASIS_NOTEBOOK=0`.
 - Agent ignore files, ported from the original OASIS: `.oasisignore` plus Cursor, Devin, Windsurf, Gemini and Aider ignore files are honoured by file tools, listings, `lsp`, `ast_grep` and `repo_map` (`src/security/agent-ignore.ts`, `ignore`). `OASIS_AGENT_IGNORE=0`.

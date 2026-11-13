@@ -269,5 +269,14 @@ export function findSecretsInDiff(diff: string): DiffSecret[] {
 		}
 	}
 	flush();
-	return hits.slice(0, 50);
+	// One entry per value and line, even when several rules match it.
+	const seen = new Set<string>();
+	return hits
+		.filter((hit) => {
+			const key = `${hit.file}\0${hit.line}\0${hit.preview}`;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		})
+		.slice(0, 50);
 }

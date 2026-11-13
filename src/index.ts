@@ -65,6 +65,7 @@ export {
 	createCheckpointsExtension,
 	RESTORE_TYPE,
 } from "./extensions/checkpoints.ts";
+export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
@@ -107,6 +108,7 @@ export {
 	isAgentIgnored,
 	parseIgnoreFile,
 } from "./security/agent-ignore.ts";
+export { type CommitPlan, commitPlan, commitSecretHits, formatCommitSecretHits } from "./security/commit-gate.ts";
 export {
 	type ProtectedHit,
 	protectedConfigPath,
