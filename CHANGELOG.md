@@ -4,6 +4,7 @@
 
 ### Added
 
+- Protected configuration paths, ported from OASIS 1.x: `write`, `edit` and `bash` changes to settings, hooks, plugins, MCP/LSP config, project agents and commands, git hooks and config, editor tasks, dev containers, direnv, commit hooks and package-manager config need confirmation (blocked without a UI). Symlinked targets are resolved.
 - Secret shield, ported from OASIS 1.x: credentials in tool results (Gitleaks rule set, provider token prefixes, `KEY=value` lines, URL passwords, `Authorization` headers) become `«secret:ID»` placeholders in the content and details; placeholders in tool arguments are restored before execution except for `web_fetch`, `web_search`, `task`, `memory` and `skill_manage`. Also exported: `redactSecrets` and `findSecretsInDiff`.
 - Web access, ported from OASIS 1.x: `web_fetch` (SSRF-safe with pinned DNS and re-vetted redirects, Defuddle HTML to Markdown, paging, Markdown content negotiation, GitHub blob to raw) and `web_search` (Tavily, Brave, Exa, Firecrawl, SearXNG with reciprocal rank fusion; keyless DuckDuckGo with a Bing fallback). An untrusted-content guard strips hidden Unicode from external results, flags prompt injections and then holds outbound shell commands for approval.
 - Background learning review: after a run with 15+ tool calls and nothing saved, a reviewer subagent reads a condensed transcript and saves skills or memories in the background. `--learning background|nudge|off`.

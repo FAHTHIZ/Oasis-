@@ -5,6 +5,7 @@ import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
+import { createProtectedPathsExtension } from "./protected-paths.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
@@ -33,6 +34,7 @@ export function oasisExtensions(): InlineExtension[] {
 		// Plan mode blocks changes before safety and sandbox prompt for them.
 		{ name: "oasis-plan-mode", factory: createPlanModeExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
+		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
 		// web_fetch, web_search and the untrusted-content guard.
@@ -62,6 +64,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-reliability", factory: createReliabilityExtension() },
 		{ name: "oasis-hooks", factory: createHooksExtension({ depth }) },
 		{ name: "oasis-safety", factory: safetyExtension },
+		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		{ name: "oasis-web", factory: createWebExtension() },
 		...(depth < MAX_DEPTH

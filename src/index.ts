@@ -42,6 +42,13 @@ export {
 	type SandboxMode,
 	type UserSandboxConfig,
 } from "./sandbox/policy.ts";
+export {
+	type ProtectedHit,
+	protectedConfigPath,
+	protectedConfigTarget,
+	protectedEditsAllowed,
+	protectedShellWrite,
+} from "./security/protected-paths.ts";
 export { findRuleSecrets, secretRuleCount, shannonEntropy } from "./security/rules.ts";
 export {
 	defaultVault,
