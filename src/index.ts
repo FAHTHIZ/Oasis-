@@ -10,6 +10,21 @@ export {
 } from "./agents/worktrees.ts";
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
 export { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./code/ast.ts";
+export {
+	BUILTIN_SERVERS,
+	type CustomServer,
+	type Diagnostic,
+	formatDiagnostic,
+	LSP_OPERATIONS,
+	LspClient,
+	LspManager,
+	type LspManagerOptions,
+	type LspOperation,
+	locateSymbol,
+	newDiagnostics,
+	serverForFile,
+	severityName,
+} from "./code/lsp.ts";
 export { buildRepoMap, extractDefinitions, listSourceFiles, type RepoMap, type RepoMapOptions } from "./code/repo-map.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
@@ -40,6 +55,7 @@ export { type ContextSavingsOptions, createContextSavingsExtension } from "./ext
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
+export { createLspExtension } from "./extensions/lsp.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";

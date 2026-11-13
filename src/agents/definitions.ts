@@ -43,7 +43,7 @@ export interface AgentDefinition {
 }
 
 /** Read tools plus bash, which is limited to read-only commands for these agents. */
-export const READ_ONLY_TOOLS = ["bash", "find", "grep", "ls", "read", "repo_map"];
+export const READ_ONLY_TOOLS = ["bash", "find", "grep", "ls", "read", "repo_map", "lsp"];
 /** Tools every general agent gets on top of pi's defaults. */
 export const GENERAL_EXTRA_TOOLS = ["grep", "find", "ls"];
 
@@ -96,6 +96,7 @@ const TOOL_NAMES: Record<string, string> = {
 	webfetch: "web_fetch",
 	websearch: "web_search",
 	memory: "memory",
+	lsp: "lsp",
 };
 
 export function mapToolName(name: string): string {

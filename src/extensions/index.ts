@@ -5,6 +5,7 @@ import { createEditMatchExtension } from "./edit-match.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
+import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { createNotesExtension } from "./notes.ts";
@@ -49,6 +50,7 @@ export function oasisExtensions(): InlineExtension[] {
 		// web_fetch, web_search and the untrusted-content guard.
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
+		{ name: "oasis-lsp", factory: createLspExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
@@ -84,6 +86,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		{ name: "oasis-web", factory: createWebExtension() },
 		{ name: "oasis-repo-map", factory: createRepoMapExtension() },
+		{ name: "oasis-lsp", factory: createLspExtension() },
 		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },
 		...(depth < MAX_DEPTH
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]

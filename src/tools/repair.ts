@@ -50,6 +50,7 @@ alias("find", "glob", "file_search", "find_files", "glob_file_search", "list_fil
 alias("ls", "list", "list_dir", "list_directory", "list_files", "dir");
 alias("todo", "todowrite", "todo_write", "update_plan", "todo_list", "todolist", "write_todos", "manage_todo_list");
 alias("web_fetch", "webfetch", "fetch", "fetch_url", "web_extract", "read_url", "url_fetch");
+alias("lsp", "language_server", "code_intel", "go_to_definition", "find_references");
 alias("repo_map", "repomap", "repo_outline", "codebase_map", "get_repo_map", "list_code_definition_names");
 alias("task", "agent", "delegate_task", "subagent", "dispatch_agent", "spawn_agent", "run_subagent");
 

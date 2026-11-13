@@ -32,6 +32,7 @@ const READ_TOOLS = new Set([
 	"web_search",
 	"session_search",
 	"repo_map",
+	"lsp",
 	"todo",
 	"exit_plan_mode",
 ]);
