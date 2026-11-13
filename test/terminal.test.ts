@@ -49,7 +49,7 @@ describe("terminal tool", () => {
 			],
 		);
 		await harness.session.prompt("check split terminal input");
-		const result = messagesText(harness.calls[2]?.messages ?? []);
+		const result = messagesText(harness.calls[3]?.messages ?? []);
 		expect(result).toContain("OASIS safety policy");
 		expect(result).toContain("refusing recursive delete");
 	});

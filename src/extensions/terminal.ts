@@ -2,8 +2,9 @@
  * `terminal` tool: interactive programs in a real pseudo-terminal (Codex's
  * unified exec with write_stdin, Hermes' process tool). Start a REPL, an
  * installer that asks questions, a TUI or a dev server, then type into it and
- * read its screen output. Commands run the way bash does (terminal backend or
- * OS sandbox) and pass the same shell safety policy, including each line typed.
+ * read its screen output. Complete text lines are screened by the shell policy;
+ * terminal-specific controls and non-shell input cannot be interpreted reliably.
+ * The configured sandbox remains the execution boundary.
  *
  * OASIS_TERMINAL=0 turns it off.
  */
