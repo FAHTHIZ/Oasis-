@@ -1,3 +1,13 @@
+<p align="center">
+  <img src="assets/oasis-wordmark.webp" alt="OASIS" width="520">
+</p>
+
+<p align="center">
+  <img src="assets/oasis-mark.webp" alt="OASIS portal symbol" width="160">
+</p>
+
+<p align="center"><strong>CODE. AUTOMATE. FLOURISH.</strong></p>
+
 # OASIS
 
 OASIS is a terminal coding agent. It is built on the open-source [pi](https://github.com/earendil-works/pi) engine (MIT) and adds the parts that decide whether an agent's work can be trusted: verification gates, a parsed-shell safety policy, and (coming next) memory, sandboxing, sub-agents and messaging gateways.
