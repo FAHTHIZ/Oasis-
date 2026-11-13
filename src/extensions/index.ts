@@ -1,5 +1,6 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
 import { createCheckpointsExtension } from "./checkpoints.ts";
+import { createContextSavingsExtension } from "./context-savings.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
@@ -47,6 +48,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
 		{ name: "oasis-checkpoints", factory: createCheckpointsExtension() },
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+		// Read dedup, superseded-result stubs and bash output condensing.
+		{ name: "oasis-context-savings", factory: createContextSavingsExtension() },
 		// Last: masks what earlier tool_result handlers produced and unmasks arguments after hooks and safety saw them.
 		{ name: "oasis-secret-shield", factory: createSecretShieldExtension() },
 	];
@@ -75,6 +78,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]
 			: []),
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+		{ name: "oasis-context-savings", factory: createContextSavingsExtension() },
 		{ name: "oasis-secret-shield", factory: createSecretShieldExtension() },
 	];
 }

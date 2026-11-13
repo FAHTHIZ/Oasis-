@@ -1,4 +1,6 @@
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
+export { condenseEnabled, condenseOutput } from "./context/condense.ts";
+export { readRange, supersedeResults } from "./context/supersede.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
 export {
 	DEFAULT_GATES,
@@ -22,6 +24,7 @@ export {
 	createCheckpointsExtension,
 	RESTORE_TYPE,
 } from "./extensions/checkpoints.ts";
+export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
