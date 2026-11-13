@@ -152,6 +152,7 @@ export {
 	describeAutoCommit,
 	dirtySnapshot,
 } from "./git/auto-commit.ts";
+export { formatWorkingDiff, workingDiff } from "./git/diff-view.ts";
 export { buildTask, type GitHubEvent, type GitHubTask, githubApi, githubCli, mentions, replyBody } from "./github/action.ts";
 export { fetchPrComments, formatPrComments } from "./github/pr-comments.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";

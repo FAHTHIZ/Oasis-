@@ -9,11 +9,14 @@
  *       MIT) on the branch's changes against its base.
  *   /pr-comments [number | url | branch]
  *       A pull request's comments and inline review threads, via gh.
+ *   /diff [paths]
+ *       Codex's /diff: working tree changes against HEAD, untracked files included.
  *   /init
  *       Codex's prompt for writing an AGENTS.md contributor guide.
  */
 import { execFile } from "node:child_process";
 import { type ExtensionAPI, parseFrontmatter } from "@earendil-works/pi-coding-agent";
+import { formatWorkingDiff, workingDiff } from "../git/diff-view.ts";
 import { fetchPrComments, PR_COMMENTS_INSTRUCTIONS } from "../github/pr-comments.ts";
 import { type BangRunner, expandBangCommands } from "../prompts/bang.ts";
 import { CODEX_INIT_PROMPT, CODEX_REVIEW_RUBRIC } from "../prompts/codex.ts";
@@ -99,6 +102,18 @@ export function createReviewExtension() {
 					send(await securityReviewPrompt(ctx.cwd), ctx.isIdle());
 				} finally {
 					ctx.ui.setStatus?.("security-review", undefined);
+				}
+			},
+		});
+
+		pi.registerCommand("diff", {
+			description: "Show the working tree's changes against HEAD, untracked files included: /diff [paths]",
+			handler: async (args, ctx) => {
+				const paths = args.trim() ? args.trim().split(/\s+/) : [];
+				try {
+					ctx.ui.notify(formatWorkingDiff(await workingDiff(ctx.cwd, paths)), "info");
+				} catch (error) {
+					ctx.ui.notify(`git diff failed: ${(error as Error).message}`, "error");
 				}
 			},
 		});
