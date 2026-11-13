@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { SandboxManager } from "@anthropic-ai/sandbox-runtime";
 import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
-import { createSandboxExtension } from "../src/extensions/sandbox.ts";
+import { createSandboxExtension, resolveAddedDir } from "../src/extensions/sandbox.ts";
 import { buildRuntimePolicy, isInside, loadUserSandboxConfig } from "../src/sandbox/policy.ts";
 import { createHarness, type Harness, messagesText } from "./harness.ts";
 
@@ -67,6 +67,26 @@ describe("sandbox extension", () => {
 		);
 		await harness.session.prompt("write inside");
 		expect(readFileSync(join(harness.cwd, "inside.txt"), "utf8")).toBe("x");
+	});
+
+	it("lets /add-dir open another directory for edits", async () => {
+		const extra = mkdtempSync(join(homedir(), "oasis-adddir-"));
+		try {
+			expect(resolveAddedDir("/", "/x")).toMatchObject({ error: expect.stringContaining("too broad") });
+			expect(resolveAddedDir("nope-missing", extra)).toMatchObject({ error: expect.stringContaining("does not exist") });
+			const notes: string[] = [];
+			harness = await createHarness(
+				[{ name: "oasis-sandbox", factory: createSandboxExtension({ mode: "workspace-write", agentDir: "/nonexistent" }) }],
+				[tool("write", { path: join(extra, "a.txt"), content: "x" }), say("ok")],
+				{ ui: { notify: (m: string) => notes.push(m) } },
+			);
+			await harness.session.prompt(`/add-dir ${extra}`);
+			expect(notes.join("\n")).toContain(`Added ${extra}`);
+			await harness.session.prompt("write there");
+			expect(readFileSync(join(extra, "a.txt"), "utf8")).toBe("x");
+		} finally {
+			rmSync(extra, { recursive: true, force: true });
+		}
 	});
 
 	it.runIf(osSandbox)("runs shell commands under OS isolation", async () => {

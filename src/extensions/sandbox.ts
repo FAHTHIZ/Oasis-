@@ -4,6 +4,7 @@
  * See src/sandbox/policy.ts for what each mode allows.
  */
 
+import { existsSync, statSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { isAbsolute, resolve } from "node:path";
 import { SandboxManager } from "@anthropic-ai/sandbox-runtime";
@@ -29,6 +30,20 @@ export interface SandboxState {
 	policy?: RuntimePolicy;
 	/** Extra writable paths from the user's sandbox.json. */
 	userAllowWrite: string[];
+	/** Extra working directories from /add-dir, --add-dir or OASIS_ADD_DIRS. */
+	addedDirs: string[];
+}
+
+/** Resolve an /add-dir argument to an existing directory, or explain why not. */
+export function resolveAddedDir(raw: string, cwd: string): { dir: string } | { error: string } {
+	const trimmed = raw.trim().replace(/^(["'])(.*)\1$/, "$2");
+	if (!trimmed) return { error: "Usage: /add-dir <path>" };
+	const expanded = trimmed === "~" ? homedir() : trimmed.startsWith("~/") ? resolve(homedir(), trimmed.slice(2)) : trimmed;
+	const dir = resolve(cwd, expanded);
+	if (!existsSync(dir)) return { error: `${dir} does not exist` };
+	if (!statSync(dir).isDirectory()) return { error: `${dir} is not a directory` };
+	if (dir === "/" || dir === homedir()) return { error: `${dir} is too broad; add a project directory instead` };
+	return { dir };
 }
 
 export interface SandboxExtensionOptions {
@@ -49,10 +64,15 @@ let mainState: SandboxState | undefined;
 
 export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 	return function sandboxExtension(pi: ExtensionAPI): void {
-		const state: SandboxState = { mode: "workspace-write", active: false, userAllowWrite: [] };
+		const state: SandboxState = { mode: "workspace-write", active: false, userAllowWrite: [], addedDirs: [] };
 		let uiContext: ExtensionContext | undefined;
 		const local = createLocalBashOperations();
 
+		if (!options.inherit)
+			pi.registerFlag("add-dir", {
+				description: "Extra working directories the agent may edit, comma-separated (like Claude Code's --add-dir)",
+				type: "string",
+			});
 		if (!options.inherit)
 			pi.registerFlag("sandbox", {
 				description: `Sandbox for shell commands: ${SANDBOX_MODES.join(", ")} (default workspace-write)`,
@@ -72,10 +92,19 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 		pi.on("session_start", async (_event, ctx) => {
 			uiContext = ctx;
 			if (options.inherit) {
-				if (mainState) Object.assign(state, { ...mainState, userAllowWrite: [...mainState.userAllowWrite] });
+				if (mainState)
+					Object.assign(state, { ...mainState, userAllowWrite: [...mainState.userAllowWrite], addedDirs: [...mainState.addedDirs] });
 				return;
 			}
 			mainState = state;
+			const addFlag = pi.getFlag("add-dir");
+			for (const raw of [typeof addFlag === "string" ? addFlag : "", process.env.OASIS_ADD_DIRS ?? ""].join(",").split(",")) {
+				if (!raw.trim()) continue;
+				const found = resolveAddedDir(raw, ctx.cwd);
+				if ("dir" in found) {
+					if (!state.addedDirs.includes(found.dir)) state.addedDirs.push(found.dir);
+				} else ctx.ui.notify(`--add-dir: ${found.error}`, "warning");
+			}
 			const user = loadUserSandboxConfig(options.agentDir ?? getAgentDir());
 			const flag = pi.getFlag("sandbox");
 			const fromFlag = typeof flag === "string" && flag ? parseMode(flag) : undefined;
@@ -84,7 +113,10 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 			state.mode = options.mode ?? fromFlag ?? parseMode(process.env.OASIS_SANDBOX) ?? user.mode ?? "workspace-write";
 			if (state.mode === "off") return;
 
-			state.policy = buildRuntimePolicy(state.mode, ctx.cwd, user);
+			state.policy = buildRuntimePolicy(state.mode, ctx.cwd, {
+				...user,
+				allowWrite: [...(user.allowWrite ?? []), ...(state.mode === "workspace-write" ? state.addedDirs : [])],
+			});
 			state.userAllowWrite = (user.allowWrite ?? []).map((p) => (p.startsWith("~/") ? resolve(homedir(), p.slice(2)) : p));
 			if (!SandboxManager.isSupportedPlatform()) {
 				state.unavailable = `sandboxing is not supported on ${process.platform}`;
@@ -128,7 +160,8 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 			const raw = String((event.input as { path?: unknown }).path ?? "");
 			if (!raw) return undefined;
 			const target = isAbsolute(raw) ? raw : resolve(ctx.cwd, raw);
-			const writable = state.mode === "workspace-write" ? [ctx.cwd, tmpdir(), "/tmp", ...state.userAllowWrite] : [tmpdir(), "/tmp"];
+			const writable =
+				state.mode === "workspace-write" ? [ctx.cwd, tmpdir(), "/tmp", ...state.userAllowWrite, ...state.addedDirs] : [tmpdir(), "/tmp"];
 			if (isInside(target, writable) && !isInside(target, state.policy.filesystem.denyWrite)) {
 				return undefined;
 			}
@@ -153,6 +186,42 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 			const hint =
 				"\n\n[OASIS sandbox] This command ran in the sandbox: writes outside the project, reads of credential files and network access to hosts not on the allowlist are blocked. If the failure is a sandbox denial, do not work around it; tell the user what access is needed.";
 			return { content: [{ type: "text" as const, text: `${annotated}${hint}` }] };
+		});
+
+		// Tell the model about the extra directories.
+		pi.on("before_agent_start", (event) => {
+			if (!state.addedDirs.length) return undefined;
+			event.systemPromptOptions.sections = {
+				...event.systemPromptOptions.sections,
+				additional_directories: `Besides the current working directory, the user added these working directories. You may read and edit files in them with absolute paths:\n${state.addedDirs.map((d) => `- ${d}`).join("\n")}`,
+			};
+			return undefined;
+		});
+
+		pi.registerCommand("add-dir", {
+			description: "Add a working directory the agent may read and edit: /add-dir <path> (no argument lists them)",
+			handler: async (args, ctx) => {
+				if (!args.trim()) {
+					ctx.ui.notify(
+						state.addedDirs.length
+							? `Working directories:\n${[ctx.cwd, ...state.addedDirs].map((d) => `- ${d}`).join("\n")}`
+							: "No extra directories. Usage: /add-dir <path>",
+						"info",
+					);
+					return;
+				}
+				const found = resolveAddedDir(args, ctx.cwd);
+				if ("error" in found) return ctx.ui.notify(found.error, "error");
+				if (found.dir === ctx.cwd || state.addedDirs.includes(found.dir))
+					return ctx.ui.notify(`${found.dir} is already a working directory.`, "info");
+				state.addedDirs.push(found.dir);
+				if (state.policy && state.mode === "workspace-write") {
+					state.policy.filesystem.allowWrite.push(found.dir);
+					if (state.active) SandboxManager.updateConfig(state.policy);
+				}
+				const note = state.mode === "read-only" ? " The sandbox is read-only, so it can be read but not edited." : "";
+				ctx.ui.notify(`Added ${found.dir} as a working directory for this session.${note}`, "info");
+			},
 		});
 
 		pi.registerCommand("sandbox", {
