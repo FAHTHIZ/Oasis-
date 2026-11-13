@@ -46,6 +46,7 @@ import {
 } from "../agents/worktrees.ts";
 import { isSafeMode } from "../core/safe-mode.ts";
 import { projectRoot } from "../memory/instructions.ts";
+import { activePluginComponents } from "../plugins/active.ts";
 
 export const MAX_PARALLEL_TASKS = 8;
 export const TASK_CONCURRENCY = 4;
@@ -160,6 +161,7 @@ export function createSubagentExtension(options: SubagentOptions) {
 				home: options.home,
 				includeProject: options.trustProjectAgents || ctx.isProjectTrusted(),
 				builtinOnly: isSafeMode(),
+				pluginAgents: activePluginComponents(options.agentDir ?? getAgentDir(), { home: options.home }).flatMap((p) => p.agents),
 			});
 			return agents;
 		};

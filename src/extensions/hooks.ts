@@ -28,6 +28,7 @@ import { claudeToolName, fromClaudeInput, matcherNames, toClaudeInput, toolRespo
 import { type HookConfig, type HookEvent, type LoadedHooks, loadHooks, matchingHandlers } from "../hooks/config.ts";
 import { combine, type HookVerdict, runHooks } from "../hooks/run.ts";
 import { projectRoot } from "../memory/instructions.ts";
+import { activePluginComponents } from "../plugins/active.ts";
 import { currentPermissionMode } from "./plan-mode.ts";
 
 export const HOOK_CONTEXT_TYPE = "oasis.hook-context";
@@ -82,6 +83,7 @@ export function createHooksExtension(options: HooksOptions = {}) {
 				agentDir: options.agentDir ?? getAgentDir(),
 				home: options.home,
 				includeProject: options.trustProject || ctx.isProjectTrusted(),
+				extra: activePluginComponents(options.agentDir ?? getAgentDir(), { home: options.home }).flatMap((p) => p.hooks),
 			});
 			return loaded;
 		};

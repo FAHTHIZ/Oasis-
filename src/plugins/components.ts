@@ -1,0 +1,164 @@
+/**
+ * Components of a Claude Code plugin (code.claude.com/docs/en/plugins-reference):
+ * skills/, commands/, agents/, hooks/hooks.json and .mcp.json at the plugin
+ * root, or the paths named in .claude-plugin/plugin.json. Paths must stay
+ * inside the plugin root. ${CLAUDE_PLUGIN_ROOT} is replaced with the root.
+ */
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { basename, join, relative, resolve, sep } from "node:path";
+
+export interface PluginManifest {
+	name?: string;
+	version?: string;
+	description?: string;
+	commands?: unknown;
+	agents?: unknown;
+	skills?: unknown;
+	hooks?: unknown;
+	mcpServers?: unknown;
+}
+
+export interface PluginComponents {
+	name: string;
+	root: string;
+	version?: string;
+	description?: string;
+	/** Directories holding <name>/SKILL.md folders, or a folder with SKILL.md. */
+	skills: string[];
+	/** Command .md files and directories (pi prompt templates). */
+	commands: string[];
+	/** Agent .md files. */
+	agents: string[];
+	/** Hook event maps (the object under "hooks"), with ${CLAUDE_PLUGIN_ROOT} expanded. */
+	hooks: Array<{ source: string; hooks: Record<string, unknown> }>;
+	/** MCP server entries by name, with ${CLAUDE_PLUGIN_ROOT} expanded. */
+	mcpServers: Record<string, unknown>;
+	warnings: string[];
+}
+
+function readJson(file: string): unknown {
+	try {
+		return JSON.parse(readFileSync(file, "utf8"));
+	} catch {
+		return undefined;
+	}
+}
+
+export function readManifest(root: string): PluginManifest | undefined {
+	const json = readJson(join(root, ".claude-plugin", "plugin.json"));
+	return json && typeof json === "object" && !Array.isArray(json) ? (json as PluginManifest) : undefined;
+}
+
+/** Replace ${CLAUDE_PLUGIN_ROOT} (and ${CLAUDE_PLUGIN_DATA}) in every string inside a JSON value. */
+export function expandPluginVars<T>(value: T, root: string, data?: string): T {
+	const walk = (v: unknown): unknown => {
+		if (typeof v === "string") {
+			let out = v.replaceAll("${CLAUDE_PLUGIN_ROOT}", root).replace(/\$CLAUDE_PLUGIN_ROOT\b/g, root);
+			if (data) out = out.replaceAll("${CLAUDE_PLUGIN_DATA}", data);
+			return out;
+		}
+		if (Array.isArray(v)) return v.map(walk);
+		if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, walk(x)]));
+		return v;
+	};
+	return walk(value) as T;
+}
+
+const asList = (value: unknown): unknown[] => (value === undefined ? [] : Array.isArray(value) ? value : [value]);
+
+function inside(root: string, path: string): string | undefined {
+	const full = resolve(root, path);
+	const rel = relative(root, full);
+	if (rel.startsWith("..") || rel.split(sep).includes("..")) return undefined;
+	return existsSync(full) ? full : undefined;
+}
+
+function mdFiles(path: string): string[] {
+	try {
+		if (statSync(path).isFile()) return path.endsWith(".md") ? [path] : [];
+		return readdirSync(path, { recursive: true, encoding: "utf8" })
+			.filter((f) => f.endsWith(".md"))
+			.sort()
+			.map((f) => join(path, f));
+	} catch {
+		return [];
+	}
+}
+
+export function loadPluginComponents(root: string, options: { dataDir?: string } = {}): PluginComponents {
+	const manifest = readManifest(root) ?? {};
+	const warnings: string[] = [];
+	const name = (typeof manifest.name === "string" && manifest.name) || basename(root);
+	const paths = (key: string, value: unknown): string[] =>
+		asList(value).flatMap((p) => {
+			if (typeof p !== "string") return [];
+			const found = inside(root, p);
+			if (!found) warnings.push(`${name}: ${key} path ${p} is missing or outside the plugin`);
+			return found ? [found] : [];
+		});
+
+	const skills = [...(existsSync(join(root, "skills")) ? [join(root, "skills")] : []), ...paths("skills", manifest.skills)];
+	if (!skills.length && manifest.skills === undefined && existsSync(join(root, "SKILL.md"))) skills.push(root);
+
+	let commands: string[];
+	if (manifest.commands && typeof manifest.commands === "object" && !Array.isArray(manifest.commands)) {
+		commands = Object.values(manifest.commands as Record<string, { source?: unknown }>).flatMap((entry) =>
+			typeof entry?.source === "string" ? paths("commands", entry.source) : [],
+		);
+		if (Object.values(manifest.commands).some((e) => typeof (e as { content?: unknown })?.content === "string"))
+			warnings.push(`${name}: inline command content is not supported yet`);
+	} else if (manifest.commands !== undefined) commands = paths("commands", manifest.commands);
+	else commands = existsSync(join(root, "commands")) ? [join(root, "commands")] : [];
+
+	const agentPaths =
+		manifest.agents !== undefined ? paths("agents", manifest.agents) : existsSync(join(root, "agents")) ? [join(root, "agents")] : [];
+	const agents = [...new Set(agentPaths.flatMap(mdFiles))];
+
+	const hooks: PluginComponents["hooks"] = [];
+	const addHookFile = (file: string) => {
+		const json = readJson(file) as { hooks?: unknown } | undefined;
+		if (json?.hooks && typeof json.hooks === "object") hooks.push({ source: file, hooks: json.hooks as Record<string, unknown> });
+		else warnings.push(`${name}: ${file} has no "hooks" object`);
+	};
+	const defaultHooks = join(root, "hooks", "hooks.json");
+	if (existsSync(defaultHooks)) addHookFile(defaultHooks);
+	for (const entry of asList(manifest.hooks)) {
+		if (typeof entry === "string") {
+			const file = inside(root, entry);
+			if (file && file !== defaultHooks) addHookFile(file);
+			else if (!file) warnings.push(`${name}: hooks path ${entry} is missing or outside the plugin`);
+		} else if (entry && typeof entry === "object")
+			hooks.push({ source: join(root, ".claude-plugin", "plugin.json"), hooks: entry as Record<string, unknown> });
+	}
+
+	const mcpServers: Record<string, unknown> = {};
+	const addMcp = (value: unknown) => {
+		const servers = value && typeof value === "object" && "mcpServers" in value ? (value as { mcpServers: unknown }).mcpServers : value;
+		if (servers && typeof servers === "object" && !Array.isArray(servers)) Object.assign(mcpServers, servers);
+	};
+	if (existsSync(join(root, ".mcp.json"))) addMcp(readJson(join(root, ".mcp.json")));
+	for (const entry of asList(manifest.mcpServers)) {
+		if (typeof entry === "string") {
+			if (/\.(mcpb|dxt)$/.test(entry)) {
+				warnings.push(`${name}: MCP bundles (${entry}) are not supported`);
+				continue;
+			}
+			const file = inside(root, entry);
+			if (file) addMcp(readJson(file));
+			else warnings.push(`${name}: mcpServers path ${entry} is missing or outside the plugin`);
+		} else addMcp(entry);
+	}
+
+	return {
+		name,
+		root,
+		version: typeof manifest.version === "string" ? manifest.version : undefined,
+		description: typeof manifest.description === "string" ? manifest.description : undefined,
+		skills,
+		commands,
+		agents,
+		hooks: hooks.map((h) => ({ source: h.source, hooks: expandPluginVars(h.hooks, root, options.dataDir) })),
+		mcpServers: expandPluginVars(mcpServers, root, options.dataDir),
+		warnings,
+	};
+}

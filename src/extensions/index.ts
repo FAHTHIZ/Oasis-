@@ -28,6 +28,7 @@ import { createOutputStylesExtension } from "./output-styles.ts";
 import { createPackageVettingExtension } from "./package-vetting.ts";
 import { createPermissionsExtension } from "./permissions.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
+import { createPluginsExtension } from "./plugins.ts";
 import { createProgressGuardExtension } from "./progress.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
 import { createReliabilityExtension } from "./reliability.ts";
@@ -104,6 +105,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-status-line", factory: createStatusLineExtension() },
 		{ name: "oasis-documents", factory: createDocumentsExtension() },
 		{ name: "oasis-mcp-presets", factory: createMcpPresetsExtension() },
+		{ name: "oasis-plugins", factory: createPluginsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

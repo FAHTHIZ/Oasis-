@@ -61,6 +61,8 @@ export interface HookSourceOptions {
 	agentDir: string;
 	home?: string;
 	includeProject: boolean;
+	/** Hook event maps from other sources (plugins), merged after the settings files. */
+	extra?: Array<{ source: string; hooks: Record<string, unknown> }>;
 }
 
 export function hookFiles(options: HookSourceOptions): string[] {
@@ -112,31 +114,35 @@ export function loadHooks(options: HookSourceOptions): LoadedHooks {
 			continue;
 		}
 		if (json.disableAllHooks === true) disabled = true;
-		const hooks = json.hooks;
-		if (!hooks || typeof hooks !== "object") continue;
-		let used = false;
-		for (const [event, groups] of Object.entries(hooks as Record<string, unknown>)) {
-			if (!(HOOK_EVENTS as readonly string[]).includes(event)) {
-				warnings.push(`${file}: hook event ${event} is not supported by OASIS`);
-				continue;
-			}
-			if (!Array.isArray(groups)) continue;
-			for (const g of groups) {
-				if (!g || typeof g !== "object") continue;
-				const group = g as Record<string, unknown>;
-				const handlers = (Array.isArray(group.hooks) ? group.hooks : [])
-					.map((h) => parseHandler(h, file, warnings))
-					.filter((h): h is HookHandler => h !== undefined);
-				if (handlers.length === 0) continue;
-				const list = config[event as HookEvent] ?? [];
-				config[event as HookEvent] = list;
-				list.push({ matcher: typeof group.matcher === "string" ? group.matcher : undefined, hooks: handlers });
-				used = true;
-			}
-		}
-		if (used) files.push(file);
+		if (addHooks(config, json.hooks, file, warnings)) files.push(file);
 	}
+	for (const extra of options.extra ?? []) if (addHooks(config, extra.hooks, extra.source, warnings)) files.push(extra.source);
 	return { config: disabled ? {} : config, files, warnings, disabled };
+}
+
+function addHooks(config: HookConfig, hooks: unknown, file: string, warnings: string[]): boolean {
+	if (!hooks || typeof hooks !== "object") return false;
+	let used = false;
+	for (const [event, groups] of Object.entries(hooks as Record<string, unknown>)) {
+		if (!(HOOK_EVENTS as readonly string[]).includes(event)) {
+			warnings.push(`${file}: hook event ${event} is not supported by OASIS`);
+			continue;
+		}
+		if (!Array.isArray(groups)) continue;
+		for (const g of groups) {
+			if (!g || typeof g !== "object") continue;
+			const group = g as Record<string, unknown>;
+			const handlers = (Array.isArray(group.hooks) ? group.hooks : [])
+				.map((h) => parseHandler(h, file, warnings))
+				.filter((h): h is HookHandler => h !== undefined);
+			if (handlers.length === 0) continue;
+			const list = config[event as HookEvent] ?? [];
+			config[event as HookEvent] = list;
+			list.push({ matcher: typeof group.matcher === "string" ? group.matcher : undefined, hooks: handlers });
+			used = true;
+		}
+	}
+	return used;
 }
 
 /**

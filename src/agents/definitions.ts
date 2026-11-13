@@ -175,6 +175,8 @@ export interface DiscoverOptions {
 	includeProject?: boolean;
 	/** Only the built-in agents (safe mode). */
 	builtinOnly?: boolean;
+	/** Agent files from enabled plugins (user-level, below <agent dir>/agents). */
+	pluginAgents?: string[];
 }
 
 /** All agents by name; project definitions override user ones, which override built-ins. */
@@ -183,6 +185,10 @@ export function discoverAgents(options: DiscoverOptions = {}): Map<string, Agent
 	const all: AgentDefinition[] = [...BUILTIN_AGENTS];
 	if (!options.builtinOnly) {
 		all.push(...readDir(join(home, ".claude", "agents"), "user"));
+		for (const file of options.pluginAgents ?? []) {
+			const def = parseAgentFile(file, "user");
+			if (def) all.push(def);
+		}
 		if (options.agentDir) all.push(...readDir(join(options.agentDir, "agents"), "user"));
 		if (options.root && options.includeProject !== false) {
 			all.push(...readDir(join(options.root, ".claude", "agents"), "project"));
