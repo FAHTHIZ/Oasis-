@@ -1,3 +1,4 @@
+export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
 export {
 	DEFAULT_GATES,
@@ -13,6 +14,13 @@ export {
 } from "./core/gates.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
+export {
+	CHECKPOINT_TYPE,
+	type CheckpointData,
+	type CheckpointOptions,
+	createCheckpointsExtension,
+	RESTORE_TYPE,
+} from "./extensions/checkpoints.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
 export { safetyExtension } from "./extensions/safety.ts";
