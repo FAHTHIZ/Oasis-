@@ -51,6 +51,7 @@ import { createStandingCorrectionsExtension } from "./standing-corrections.ts";
 import { createStatusLineExtension } from "./status-line.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { createSyntaxCheckExtension } from "./syntax-check.ts";
+import { createTerminalExtension } from "./terminal.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
 import { createTurnGatesExtension } from "./turn-gates.ts";
@@ -120,6 +121,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-insights", factory: createInsightsExtension() },
 		{ name: "oasis-image-generate", factory: createImageGenerateExtension() },
 		{ name: "oasis-run-limits", factory: createRunLimitsExtension() },
+		{ name: "oasis-terminal", factory: createTerminalExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

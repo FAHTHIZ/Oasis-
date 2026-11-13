@@ -130,6 +130,7 @@ export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
 export { createSyntaxCheckExtension } from "./extensions/syntax-check.ts";
+export { createTerminalExtension } from "./extensions/terminal.ts";
 export { todoExtension } from "./extensions/todo.ts";
 export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
@@ -254,6 +255,7 @@ export { type BackgroundJob, BackgroundShells, describeJob as describeBackground
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { MonitorFeed, stripControl } from "./shell/monitor.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
+export { cleanOutput, keyBytes, TerminalSessions } from "./shell/pty.ts";
 export { analyzeShellRisk, isCriticalPath, type ShellRisk } from "./shell/risk.ts";
 export { cleanCliOutput, runSkillsCli, SKILLS_HUB_USAGE, type SkillsRunner, skillsCliArgs } from "./skills/hub.ts";
 export {

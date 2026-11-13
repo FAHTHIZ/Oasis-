@@ -52,6 +52,7 @@
 		"@earendil-works/pi-ai": "1.5.2",
 		"@earendil-works/pi-coding-agent": "1.5.2",
 		"@earendil-works/pi-tui": "1.5.2",
+		"@lydell/node-pty": "^1.2.0-beta.18",
 		"@slack/bolt": "^5.1.0",
 		"@slack/web-api": "^8.4.0",
 		"@vscode/tree-sitter-wasm": "^0.3.1",

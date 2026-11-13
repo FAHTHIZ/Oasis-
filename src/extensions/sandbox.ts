@@ -65,6 +65,17 @@ let mainState: SandboxState | undefined;
 /** The main session's terminal backend, shared with subagents too. */
 let mainBackend: ShellBackend | undefined;
 
+/**
+ * A command line that runs `command` the way the bash tool would: on the
+ * terminal backend, inside the OS sandbox, or as is. For other tools that
+ * start processes (the PTY terminal).
+ */
+export async function sandboxedCommand(command: string, cwd: string): Promise<string> {
+	if (mainBackend) return mainBackend.wrap(command, cwd);
+	if (mainState?.active) return SandboxManager.wrapWithSandbox(command);
+	return command;
+}
+
 export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 	return function sandboxExtension(pi: ExtensionAPI): void {
 		const state: SandboxState = { mode: "workspace-write", active: false, userAllowWrite: [], addedDirs: [] };
