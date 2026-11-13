@@ -63,6 +63,15 @@ export {
 	refusesSpuriously,
 } from "./core/intent.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
+export {
+	CommandProgress,
+	failureSignature,
+	harmlessToRepeat,
+	RERUN_NOTE,
+	THRASH_ESCALATE_AT,
+	THRASH_WARN_AT,
+	thrashNote,
+} from "./core/progress.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";
@@ -84,6 +93,7 @@ export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.t
 export { createNoopEditExtension } from "./extensions/noop-edit.ts";
 export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
+export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";

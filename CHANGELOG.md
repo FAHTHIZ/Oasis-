@@ -4,6 +4,7 @@
 
 ### Added
 
+- Progress guards, ported from the original OASIS agent loop (`src/core/progress.ts`): bash failures with the same fingerprint across rounds of edits get a "fix is not reaching the cause" note (escalating at five), and repeated state-changing commands with no edits since get a repeated-side-effect warning. `OASIS_PROGRESS_GUARD=0`.
 - Early-stop turn gates, ported from the original OASIS turn guards (`src/core/intent.ts`): on a change request where nothing changed, replies that describe the work, announce a next step and stop, give up after a tool error, refuse spuriously, or claim an unmade change get one reminder (and a visible note for unmade-change claims).
 - Git safety snapshots, ported from the original OASIS (`src/security/git-safety.ts`): the working tree and any dropped stash entries are saved under `refs/oasis/safety/` before bash commands that discard work, with restore instructions in the result; the command is blocked when the snapshot fails. `OASIS_GIT_SAFETY=0`.
 - No-op edit check, ported from the original OASIS (`src/tools/noop-edit.ts`): scripted in-place edits through bash that exit 0 without changing any named file get a warning in the result. `OASIS_NOOP_EDIT_CHECK=0`.
