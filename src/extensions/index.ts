@@ -8,6 +8,7 @@ import { createPlanModeExtension } from "./plan-mode.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
+import { createSkillsExtension } from "./skills.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
@@ -32,6 +33,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
+		// skill_manage and the learning nudge (Hermes' procedural memory).
+		{ name: "oasis-skills", factory: createSkillsExtension() },
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
 		{ name: "oasis-checkpoints", factory: createCheckpointsExtension() },
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
