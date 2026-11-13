@@ -112,6 +112,7 @@ export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { createGitSafetyExtension } from "./extensions/git-safety.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
 export { oasisExtensions } from "./extensions/index.ts";
+export { createInsightsExtension } from "./extensions/insights.ts";
 export { createLspExtension } from "./extensions/lsp.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { createNoopEditExtension } from "./extensions/noop-edit.ts";
@@ -155,6 +156,7 @@ export {
 export { formatWorkingDiff, workingDiff } from "./git/diff-view.ts";
 export { buildTask, type GitHubEvent, type GitHubTask, githubApi, githubCli, mentions, replyBody } from "./github/action.ts";
 export { fetchPrComments, formatPrComments } from "./github/pr-comments.ts";
+export { collectInsights, formatInsights } from "./insights/usage.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
