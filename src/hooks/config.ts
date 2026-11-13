@@ -31,6 +31,8 @@ export interface CommandHook {
 	command: string;
 	/** Seconds. */
 	timeout?: number;
+	/** Extra environment (plugin hooks get CLAUDE_PLUGIN_ROOT, CLAUDE_PLUGIN_DATA, CLAUDE_PLUGIN_OPTION_*). */
+	env?: Record<string, string>;
 }
 export interface HttpHook {
 	type: "http";
@@ -62,7 +64,7 @@ export interface HookSourceOptions {
 	home?: string;
 	includeProject: boolean;
 	/** Hook event maps from other sources (plugins), merged after the settings files. */
-	extra?: Array<{ source: string; hooks: Record<string, unknown> }>;
+	extra?: Array<{ source: string; hooks: Record<string, unknown>; env?: Record<string, string> }>;
 }
 
 export function hookFiles(options: HookSourceOptions): string[] {
@@ -116,11 +118,11 @@ export function loadHooks(options: HookSourceOptions): LoadedHooks {
 		if (json.disableAllHooks === true) disabled = true;
 		if (addHooks(config, json.hooks, file, warnings)) files.push(file);
 	}
-	for (const extra of options.extra ?? []) if (addHooks(config, extra.hooks, extra.source, warnings)) files.push(extra.source);
+	for (const extra of options.extra ?? []) if (addHooks(config, extra.hooks, extra.source, warnings, extra.env)) files.push(extra.source);
 	return { config: disabled ? {} : config, files, warnings, disabled };
 }
 
-function addHooks(config: HookConfig, hooks: unknown, file: string, warnings: string[]): boolean {
+function addHooks(config: HookConfig, hooks: unknown, file: string, warnings: string[], env?: Record<string, string>): boolean {
 	if (!hooks || typeof hooks !== "object") return false;
 	let used = false;
 	for (const [event, groups] of Object.entries(hooks as Record<string, unknown>)) {
@@ -134,6 +136,7 @@ function addHooks(config: HookConfig, hooks: unknown, file: string, warnings: st
 			const group = g as Record<string, unknown>;
 			const handlers = (Array.isArray(group.hooks) ? group.hooks : [])
 				.map((h) => parseHandler(h, file, warnings))
+				.map((h) => (h && env && h.type === "command" ? { ...h, env } : h))
 				.filter((h): h is HookHandler => h !== undefined);
 			if (handlers.length === 0) continue;
 			const list = config[event as HookEvent] ?? [];

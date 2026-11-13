@@ -70,7 +70,7 @@ function runCommand(handler: HookHandler & { type: "command" }, input: string, c
 		const child = spawn(handler.command, {
 			shell: true,
 			cwd: ctx.cwd,
-			env: { ...process.env, CLAUDE_PROJECT_DIR: ctx.projectDir, OASIS_PROJECT_DIR: ctx.projectDir },
+			env: { ...process.env, ...handler.env, CLAUDE_PROJECT_DIR: ctx.projectDir, OASIS_PROJECT_DIR: ctx.projectDir },
 			stdio: ["pipe", "pipe", "pipe"],
 			detached: process.platform !== "win32",
 		});

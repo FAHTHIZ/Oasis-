@@ -7,6 +7,7 @@ import { normalizeLspServers } from "../src/code/lsp.ts";
 import { loadOutputStyles } from "../src/core/output-styles.ts";
 import { createPluginsExtension } from "../src/extensions/plugins.ts";
 import { loadHooks } from "../src/hooks/config.ts";
+import { runHooks } from "../src/hooks/run.ts";
 import { activePluginComponents } from "../src/plugins/active.ts";
 import { expandPluginVars, loadPluginComponents } from "../src/plugins/components.ts";
 import { claudeCodePlugins, gitUrl, PluginStore } from "../src/plugins/store.ts";
@@ -50,6 +51,27 @@ describe("plugins", () => {
 		expect(JSON.stringify(c.hooks[0]?.hooks)).toContain(`${root}/check.sh`);
 		expect((c.mcpServers.tool as { command: string }).command).toBe(`${root}/bin/server`);
 		expect(expandPluginVars("$CLAUDE_PLUGIN_ROOT/x", "/r")).toBe("/r/x");
+	});
+
+	it("runs plugin hook commands with the plugin root, data dir and options in the environment", async () => {
+		const root = join(
+			tree({
+				"p/.claude-plugin/plugin.json": JSON.stringify({ name: "envy", userConfig: { region: { type: "string", default: "eu" } } }),
+				"p/hooks/hooks.json": JSON.stringify({
+					hooks: {
+						Stop: [
+							{ hooks: [{ type: "command", command: 'echo "$CLAUDE_PLUGIN_ROOT|$CLAUDE_PLUGIN_DATA|$CLAUDE_PLUGIN_OPTION_REGION"' }] },
+						],
+					},
+				}),
+			}),
+			"p",
+		);
+		const c = loadPluginComponents(root, { dataDir: "/tmp/envy-data", userConfig: { region: "us" } });
+		const loaded = loadHooks({ root, agentDir: root, home: root, includeProject: false, extra: c.hooks });
+		const handlers = loaded.config.Stop?.[0]?.hooks ?? [];
+		const [run] = await runHooks(handlers, { hook_event_name: "Stop" }, { cwd: root, projectDir: root });
+		expect(run?.stdout.trim()).toBe(`${root}|/tmp/envy-data|us`);
 	});
 
 	it("rejects manifest paths outside the plugin", () => {

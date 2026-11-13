@@ -34,7 +34,7 @@ export interface PluginComponents {
 	/** Agent .md files. */
 	agents: string[];
 	/** Hook event maps (the object under "hooks"), with ${CLAUDE_PLUGIN_ROOT} expanded. */
-	hooks: Array<{ source: string; hooks: Record<string, unknown> }>;
+	hooks: Array<{ source: string; hooks: Record<string, unknown>; env?: Record<string, string> }>;
 	/** MCP server entries by name, with ${CLAUDE_PLUGIN_ROOT} expanded. */
 	mcpServers: Record<string, unknown>;
 	/** LSP server entries by name (Claude Code format), with ${CLAUDE_PLUGIN_ROOT} expanded. */
@@ -261,7 +261,11 @@ export function loadPluginComponents(
 		skills,
 		commands,
 		agents,
-		hooks: hooks.map((h) => ({ source: h.source, hooks: expandPluginVars(h.hooks, root, options.dataDir, optionValues) })),
+		hooks: hooks.map((h) => ({
+			source: h.source,
+			hooks: expandPluginVars(h.hooks, root, options.dataDir, optionValues),
+			env: { CLAUDE_PLUGIN_ROOT: root, ...(options.dataDir ? { CLAUDE_PLUGIN_DATA: options.dataDir } : {}), ...optionEnv },
+		})),
 		mcpServers: withOptionEnv(expandPluginVars(mcpServers, root, options.dataDir, optionValues)),
 		lspServers: withOptionEnv(expandPluginVars(lspServers, root, options.dataDir, optionValues)),
 		options: fields,
