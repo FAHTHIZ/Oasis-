@@ -6,6 +6,7 @@
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
+import { loadBundle } from "../mcp/mcpb.ts";
 
 export interface PluginManifest {
 	name?: string;
@@ -148,7 +149,18 @@ export function loadPluginComponents(root: string, options: { dataDir?: string }
 	for (const entry of asList(manifest.mcpServers)) {
 		if (typeof entry === "string") {
 			if (/\.(mcpb|dxt)$/.test(entry)) {
-				warnings.push(`${name}: MCP bundles (${entry}) are not supported`);
+				const file = inside(root, entry);
+				if (!file) {
+					warnings.push(`${name}: mcpServers bundle ${entry} is missing or outside the plugin`);
+					continue;
+				}
+				try {
+					const bundle = loadBundle(file, join(options.dataDir ?? join(root, ".oasis"), "mcpb"));
+					for (const w of bundle.warnings) warnings.push(`${name}: ${entry}: ${w}`);
+					if (bundle.server) mcpServers[bundle.name] = bundle.server;
+				} catch (error) {
+					warnings.push(`${name}: ${entry}: ${(error as Error).message}`);
+				}
 				continue;
 			}
 			const file = inside(root, entry);

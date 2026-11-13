@@ -2,10 +2,11 @@
  * `/mcp-add <preset> [--project]` writes a ready-made server entry (see
  * src/mcp/presets.ts) to ~/.oasis/agent/mcp.json, or .oasis/mcp.json with
  * --project; `/mcp-add` alone lists the presets and `/mcp-remove <name>`
- * deletes an entry. pi's MCP client picks the change up after /reload.
+ * deletes an entry. `/mcp-add <file.mcpb>` installs an MCP Bundle. pi's MCP client picks the change up after /reload.
  */
-import { join } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
+import { loadBundle } from "../mcp/mcpb.ts";
 import { addServerToFile, findPreset, MCP_PRESETS, removeServerFromFile } from "../mcp/presets.ts";
 import { projectRoot } from "../memory/instructions.ts";
 
@@ -36,6 +37,25 @@ export function createMcpPresetsExtension(options: { agentDir?: () => string } =
 				if (!name) {
 					const list = MCP_PRESETS.map((p) => `${p.name.padEnd(16)} ${p.description}${p.needs ? ` (${p.needs})` : ""}`);
 					return ctx.ui.notify(`MCP presets (/mcp-add NAME [--project]):\n${list.join("\n")}`, "info");
+				}
+				if (/\.(mcpb|dxt)$/i.test(name)) {
+					const file = project ? projectFile(ctx.cwd) : userFile();
+					try {
+						const bundle = loadBundle(
+							isAbsolute(name) ? name : resolve(ctx.cwd, name),
+							join(options.agentDir?.() ?? getAgentDir(), "mcpb"),
+						);
+						if (!bundle.server)
+							return ctx.ui.notify(`Cannot start ${bundle.name} yet: ${bundle.warnings.join("; ") || "no server config"}`, "warning");
+						const result = addServerToFile(file, bundle.name, bundle.server);
+						const extra = bundle.warnings.length ? `\n${bundle.warnings.join("\n")}` : "";
+						return ctx.ui.notify(
+							`${result === "added" ? "Added" : "Updated"} MCP bundle "${bundle.name}"${bundle.manifest.version ? ` ${bundle.manifest.version}` : ""} in ${file} (unpacked in ${bundle.dir}).${extra}\nRun /reload to connect it.`,
+							"info",
+						);
+					} catch (error) {
+						return ctx.ui.notify(`Could not install ${name}: ${(error as Error).message}`, "error");
+					}
 				}
 				const preset = findPreset(name);
 				if (!preset) return ctx.ui.notify(`No preset "${name}". /mcp-add lists them.`, "warning");
