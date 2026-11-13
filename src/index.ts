@@ -80,6 +80,7 @@ export {
 } from "./security/secrets.ts";
 export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
+export { analyzeShellRisk, isCriticalPath, type ShellRisk } from "./shell/risk.ts";
 export {
 	isOpen,
 	latestTodos,

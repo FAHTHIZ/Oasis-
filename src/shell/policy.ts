@@ -8,11 +8,15 @@
  * The policy only blocks commands that are catastrophic and almost never what
  * the user meant. Everything else is left to the sandbox and approval layers.
  */
+
 import { baseName, eachCommand, eachPipeline, parseShell, type SimpleCommand, unwrap } from "./ast.ts";
+import { analyzeShellRisk } from "./risk.ts";
 
 export interface ShellVerdict {
 	block: boolean;
 	reason?: string;
+	/** Runs only after the user approves it (src/shell/risk.ts); blocked without a UI. */
+	ask?: string;
 }
 
 const SHELLS = new Set(["sh", "bash", "zsh", "dash", "ksh", "fish", "python", "python3", "node", "perl", "ruby"]);
@@ -110,5 +114,9 @@ export function evaluateShellCommand(command: string): ShellVerdict {
 			}
 		});
 	}
-	return reason ? { block: true, reason } : { block: false };
+	if (reason) return { block: true, reason };
+	const risk = analyzeShellRisk(command);
+	if (risk.blocked) return { block: true, reason: `refusing a command that ${risk.blocked}` };
+	if (risk.highRisk) return { block: false, ask: risk.highRisk };
+	return { block: false };
 }
