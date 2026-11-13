@@ -70,6 +70,7 @@ export {
 	refusesSpuriously,
 } from "./core/intent.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
+export { parseModelList, runMixture } from "./core/moa.ts";
 export { classifyTask, type RouteDecision } from "./core/model-routing.ts";
 export { BUILTIN_STYLES, loadOutputStyles, type OutputStyle } from "./core/output-styles.ts";
 export {
@@ -116,6 +117,7 @@ export { oasisExtensions } from "./extensions/index.ts";
 export { createInsightsExtension } from "./extensions/insights.ts";
 export { createLspExtension } from "./extensions/lsp.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
+export { createMoaExtension } from "./extensions/moa.ts";
 export { createNoopEditExtension } from "./extensions/noop-edit.ts";
 export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";

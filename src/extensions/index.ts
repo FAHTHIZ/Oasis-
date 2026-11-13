@@ -25,6 +25,7 @@ import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
 import { createMcpPresetsExtension } from "./mcp-presets.ts";
 import { createMemoryExtension } from "./memory.ts";
+import { createMoaExtension } from "./moa.ts";
 import { createModelRoutingExtension } from "./model-routing.ts";
 import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
@@ -110,6 +111,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-output-styles", factory: createOutputStylesExtension() },
 		{ name: "oasis-session-messages", factory: createSessionMessagesExtension() },
 		{ name: "oasis-side-questions", factory: createSideQuestionsExtension() },
+		{ name: "oasis-moa", factory: createMoaExtension() },
 		{ name: "oasis-status-line", factory: createStatusLineExtension() },
 		{ name: "oasis-documents", factory: createDocumentsExtension() },
 		{ name: "oasis-mcp-presets", factory: createMcpPresetsExtension() },
