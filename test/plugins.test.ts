@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { discoverAgents } from "../src/agents/definitions.ts";
+import { normalizeLspServers } from "../src/code/lsp.ts";
+import { loadOutputStyles } from "../src/core/output-styles.ts";
 import { createPluginsExtension } from "../src/extensions/plugins.ts";
 import { loadHooks } from "../src/hooks/config.ts";
 import { activePluginComponents } from "../src/plugins/active.ts";
@@ -127,6 +129,39 @@ describe("plugins", () => {
 		expect(agents.get("demo-reviewer")?.description).toBe("Reviews code");
 		const hooks = loadHooks({ root: agentDir, agentDir, home: agentDir, includeProject: false, extra: plugin?.hooks });
 		expect(hooks.config.PreToolUse?.[0]?.matcher).toBe("Bash");
+	});
+
+	it("loads output styles, LSP servers and bin/ onto PATH", async () => {
+		const home = tree({
+			...pluginFiles(".claude/plugins/cache/m/demo/1.0.0"),
+			".claude/plugins/cache/m/demo/1.0.0/output-styles/terse.md": "---\ndescription: Very short\n---\nBe terse.",
+			".claude/plugins/cache/m/demo/1.0.0/.lsp.json": JSON.stringify({
+				web: { command: "${CLAUDE_PLUGIN_ROOT}/bin/ls", args: ["--stdio"], extensionToLanguage: { ".vue": "vue", ".svelte": "svelte" } },
+			}),
+			".claude/plugins/cache/m/demo/1.0.0/bin/demo-tool": "#!/bin/sh\necho hi\n",
+		});
+		const path = join(home, ".claude/plugins/cache/m/demo/1.0.0");
+		writeFileSync(
+			join(home, ".claude/plugins/installed_plugins.json"),
+			JSON.stringify({ version: 2, plugins: { "demo@m": [{ scope: "user", installPath: path }] } }),
+		);
+		writeFileSync(join(home, ".claude/settings.json"), JSON.stringify({ enabledPlugins: { "demo@m": true } }));
+		const c = loadPluginComponents(path);
+		expect(c.outputStyles).toEqual([join(path, "output-styles", "terse.md")]);
+		expect(c.bin).toBe(join(path, "bin"));
+		const servers = normalizeLspServers(c.lspServers);
+		expect(servers["web-vue"]).toEqual({ command: `${path}/bin/ls`, args: ["--stdio"], extensions: [".vue"], languageId: "vue" });
+		expect(servers["web-svelte"]?.extensions).toEqual([".svelte"]);
+		expect(normalizeLspServers({ go: { command: "gopls", extensionToLanguage: { ".go": "go" } } }).go?.languageId).toBe("go");
+		const styles = loadOutputStyles({ home: mkdtempSync(join(tmpdir(), "h-")), agentDir: home, pluginFiles: c.outputStyles });
+		expect(styles.terse).toMatchObject({ source: "plugin", description: "Very short" });
+
+		const agentDir = mkdtempSync(join(tmpdir(), "agent-"));
+		const pathEnv: NodeJS.ProcessEnv = { PATH: "/usr/bin" };
+		harness = await createHarness([createPluginsExtension({ agentDir: () => agentDir, home, env: {}, pathEnv })], [], {
+			ui: { notify: () => {}, setStatus: () => {} },
+		});
+		expect(pathEnv.PATH).toBe(`${join(path, "bin")}:/usr/bin`);
 	});
 
 	it("/plugin adds a marketplace and lists plugins", async () => {

@@ -1,7 +1,7 @@
 /**
  * Components of a Claude Code plugin (code.claude.com/docs/en/plugins-reference):
- * skills/, commands/, agents/, hooks/hooks.json and .mcp.json at the plugin
- * root, or the paths named in .claude-plugin/plugin.json. Paths must stay
+ * skills/, commands/, agents/, hooks/hooks.json, .mcp.json, .lsp.json,
+ * output-styles/ and bin/ at the plugin root, or the paths named in .claude-plugin/plugin.json. Paths must stay
  * inside the plugin root. ${CLAUDE_PLUGIN_ROOT} is replaced with the root.
  */
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
@@ -16,6 +16,8 @@ export interface PluginManifest {
 	skills?: unknown;
 	hooks?: unknown;
 	mcpServers?: unknown;
+	lspServers?: unknown;
+	outputStyles?: unknown;
 }
 
 export interface PluginComponents {
@@ -33,6 +35,12 @@ export interface PluginComponents {
 	hooks: Array<{ source: string; hooks: Record<string, unknown> }>;
 	/** MCP server entries by name, with ${CLAUDE_PLUGIN_ROOT} expanded. */
 	mcpServers: Record<string, unknown>;
+	/** LSP server entries by name (Claude Code format), with ${CLAUDE_PLUGIN_ROOT} expanded. */
+	lspServers: Record<string, unknown>;
+	/** Output-style .md files. */
+	outputStyles: string[];
+	/** bin/ directory, put on the shell's PATH while the plugin is enabled. */
+	bin?: string;
 	warnings: string[];
 }
 
@@ -149,6 +157,33 @@ export function loadPluginComponents(root: string, options: { dataDir?: string }
 		} else addMcp(entry);
 	}
 
+	const lspServers: Record<string, unknown> = {};
+	const addLsp = (value: unknown) => {
+		if (value && typeof value === "object" && !Array.isArray(value)) Object.assign(lspServers, value);
+	};
+	if (existsSync(join(root, ".lsp.json"))) addLsp(readJson(join(root, ".lsp.json")));
+	for (const entry of asList(manifest.lspServers)) {
+		if (typeof entry === "string") {
+			const file = inside(root, entry);
+			if (file) addLsp(readJson(file));
+			else warnings.push(`${name}: lspServers path ${entry} is missing or outside the plugin`);
+		} else addLsp(entry);
+	}
+
+	const stylePaths =
+		manifest.outputStyles !== undefined
+			? paths("outputStyles", manifest.outputStyles)
+			: existsSync(join(root, "output-styles"))
+				? [join(root, "output-styles")]
+				: [];
+	const outputStyles = [...new Set(stylePaths.flatMap(mdFiles))];
+
+	const binDir = join(root, "bin");
+	let bin: string | undefined;
+	try {
+		if (statSync(binDir).isDirectory()) bin = binDir;
+	} catch {}
+
 	return {
 		name,
 		root,
@@ -159,6 +194,9 @@ export function loadPluginComponents(root: string, options: { dataDir?: string }
 		agents,
 		hooks: hooks.map((h) => ({ source: h.source, hooks: expandPluginVars(h.hooks, root, options.dataDir) })),
 		mcpServers: expandPluginVars(mcpServers, root, options.dataDir),
+		lspServers: expandPluginVars(lspServers, root, options.dataDir),
+		outputStyles,
+		...(bin ? { bin } : {}),
 		warnings,
 	};
 }

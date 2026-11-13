@@ -11,7 +11,8 @@
  *
  * Servers come from PATH, from the project (node_modules/.bin, .venv/bin)
  * only in trusted projects, and from "lspServers" in ~/.oasis/agent/settings.json
- * (or .oasis/settings.json in trusted projects). OASIS_LSP=0 turns it all off;
+ * (or .oasis/settings.json in trusted projects; Claude Code's
+ * `extensionToLanguage` format works too) and from enabled plugins' .lsp.json. OASIS_LSP=0 turns it all off;
  * OASIS_LSP_DIAGNOSTICS=0 keeps the tool but stops the post-edit check.
  */
 import { readFileSync } from "node:fs";
@@ -26,13 +27,17 @@ import {
 	LSP_OPERATIONS,
 	LspManager,
 	newDiagnostics,
+	normalizeLspServers,
 	severityName,
 } from "../code/lsp.ts";
+import { activePluginComponents } from "../plugins/active.ts";
 
 export interface LspExtensionOptions {
 	env?: NodeJS.ProcessEnv;
 	/** Settings directory holding settings.json, read lazily. Default: the agent dir. */
 	agentDir?: () => string;
+	/** Home directory, for plugins installed in Claude Code. */
+	home?: string;
 	/** Treat the project as trusted (tests). */
 	trustProject?: boolean;
 	/** Max wait for post-edit diagnostics, in ms (default 10000; the first start can take longer and is skipped). */
@@ -42,7 +47,7 @@ export interface LspExtensionOptions {
 function readServers(file: string): Record<string, CustomServer> {
 	try {
 		const json = JSON.parse(readFileSync(file, "utf8")) as { lspServers?: unknown };
-		return json.lspServers && typeof json.lspServers === "object" ? (json.lspServers as Record<string, CustomServer>) : {};
+		return normalizeLspServers(json.lspServers);
 	} catch {
 		return {};
 	}
@@ -55,6 +60,16 @@ export function createLspExtension(options: LspExtensionOptions = {}) {
 	const env = options.env ?? process.env;
 	return (pi: ExtensionAPI) => {
 		if (env.OASIS_LSP === "0") return;
+		let pluginCache: Record<string, CustomServer> | undefined;
+		const pluginServers = () => {
+			pluginCache ??= Object.assign(
+				{},
+				...activePluginComponents(options.agentDir?.() ?? getAgentDir(), { home: options.home, env }).map((p) =>
+					normalizeLspServers(Object.fromEntries(Object.entries(p.lspServers).map(([k, v]) => [`${p.name}-${k}`, v]))),
+				),
+			) as Record<string, CustomServer>;
+			return pluginCache;
+		};
 		const managers = new Map<string, LspManager>();
 		const baselines = new Map<string, Diagnostic[]>();
 		const manager = (ctx: ExtensionContext) => {
@@ -66,6 +81,7 @@ export function createLspExtension(options: LspExtensionOptions = {}) {
 					trusted,
 					diagnosticTimeoutMs: options.diagnosticTimeoutMs ?? 8000,
 					servers: () => ({
+						...pluginServers(),
 						...readServers(join(options.agentDir?.() ?? getAgentDir(), "settings.json")),
 						...(trusted() ? readServers(join(ctx.cwd, ".oasis", "settings.json")) : {}),
 					}),

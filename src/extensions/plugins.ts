@@ -10,6 +10,7 @@
  * Safe mode and OASIS_PLUGINS=0 turn plugins off; OASIS_CLAUDE_PLUGINS=0
  * ignores Claude Code's installs.
  */
+import { delimiter } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { convertClaudeServer, safeServerName } from "../mcp/claude.ts";
 import { activePluginComponents } from "../plugins/active.ts";
@@ -28,6 +29,8 @@ export interface PluginsOptions {
 	agentDir?: () => string;
 	home?: string;
 	env?: NodeJS.ProcessEnv;
+	/** Environment whose PATH gets plugin bin/ folders. Default: process.env. */
+	pathEnv?: NodeJS.ProcessEnv;
 }
 
 export function createPluginsExtension(options: PluginsOptions = {}) {
@@ -36,6 +39,7 @@ export function createPluginsExtension(options: PluginsOptions = {}) {
 		const store = () => new PluginStore(agentDir(), { home: options.home, env: options.env });
 		const active = () => activePluginComponents(agentDir(), { home: options.home, env: options.env });
 		let registered = new Set<string>();
+		let onPath = new Set<string>();
 
 		pi.on("resources_discover", () => {
 			const plugins = active();
@@ -50,7 +54,14 @@ export function createPluginsExtension(options: PluginsOptions = {}) {
 			const env = options.env ?? process.env;
 			const next = new Set<string>();
 			const problems: string[] = [];
-			for (const plugin of active()) {
+			const plugins = active();
+			// bin/ folders go on the shell's PATH while their plugin is enabled, as in Claude Code.
+			const bins = plugins.flatMap((p) => (p.bin ? [p.bin] : []));
+			const pathEnv = options.pathEnv ?? process.env;
+			const kept = (pathEnv.PATH ?? "").split(delimiter).filter((dir) => dir && !onPath.has(dir));
+			pathEnv.PATH = [...bins, ...kept].join(delimiter);
+			onPath = new Set(bins);
+			for (const plugin of plugins) {
 				problems.push(...plugin.warnings);
 				for (const [name, raw] of Object.entries(plugin.mcpServers)) {
 					const config = convertClaudeServer(raw, { ...env, CLAUDE_PLUGIN_ROOT: plugin.root });

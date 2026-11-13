@@ -35,6 +35,7 @@ export {
 	type LspOperation,
 	locateSymbol,
 	newDiagnostics,
+	normalizeLspServers,
 	serverForFile,
 	severityName,
 } from "./code/lsp.ts";

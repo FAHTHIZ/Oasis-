@@ -68,6 +68,40 @@ export interface CustomServer {
 	settings?: unknown;
 }
 
+/**
+ * Accepts OASIS entries ({ command, extensions, languageId }) and Claude Code
+ * entries ({ command, extensionToLanguage, args, env, ... }); a Claude Code
+ * server with several languages becomes one entry per language.
+ */
+export function normalizeLspServers(raw: unknown): Record<string, CustomServer> {
+	const out: Record<string, CustomServer> = {};
+	if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+	for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
+		const spec = value as Partial<CustomServer> & { extensionToLanguage?: unknown };
+		if (!spec || typeof spec.command !== "string") continue;
+		const base = {
+			command: spec.command,
+			...(Array.isArray(spec.args) ? { args: spec.args.map(String) } : {}),
+			...(spec.initializationOptions !== undefined ? { initializationOptions: spec.initializationOptions } : {}),
+			...(spec.settings !== undefined ? { settings: spec.settings } : {}),
+		};
+		if (Array.isArray(spec.extensions)) {
+			out[name] = { ...base, extensions: spec.extensions.map(String), ...(spec.languageId ? { languageId: spec.languageId } : {}) };
+			continue;
+		}
+		const map = spec.extensionToLanguage;
+		if (!map || typeof map !== "object") continue;
+		const byLanguage = new Map<string, string[]>();
+		for (const [ext, language] of Object.entries(map as Record<string, unknown>)) {
+			if (typeof language !== "string") continue;
+			byLanguage.set(language, [...(byLanguage.get(language) ?? []), ext.startsWith(".") ? ext : `.${ext}`]);
+		}
+		for (const [language, extensions] of byLanguage)
+			out[byLanguage.size === 1 ? name : `${name}-${language}`] = { ...base, extensions, languageId: language };
+	}
+	return out;
+}
+
 const C_EXT = [".c", ".h", ".cc", ".cpp", ".cxx", ".hpp", ".hh", ".hxx", ".m", ".mm"];
 export const BUILTIN_SERVERS: ServerSpec[] = [
 	{

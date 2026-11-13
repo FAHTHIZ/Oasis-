@@ -4,16 +4,17 @@
  * Built-ins: default, concise, explanatory, learning, architect, reviewer.
  * Custom styles are Markdown files (optional `name`/`description`
  * frontmatter) in ~/.claude/output-styles, ~/.oasis/agent/output-styles and,
- * in trusted projects, .claude/output-styles and .oasis/output-styles.
+ * in trusted projects, .claude/output-styles and .oasis/output-styles, plus
+ * the output-styles of enabled Claude Code plugins.
  */
 import { lstatSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import { parseFrontmatter } from "@earendil-works/pi-coding-agent";
 
 export interface OutputStyle {
 	name: string;
 	description: string;
-	source: "builtin" | "user" | "project";
+	source: "builtin" | "plugin" | "user" | "project";
 	prompt: string;
 	file?: string;
 }
@@ -62,6 +63,8 @@ export interface StyleDirs {
 	agentDir: string;
 	/** Project root, only when the project is trusted. */
 	root?: string;
+	/** Style files from enabled plugins; user and project styles override them. */
+	pluginFiles?: string[];
 }
 
 export function styleDirectories({ home, agentDir, root }: StyleDirs): { dir: string; source: "user" | "project" }[] {
@@ -79,17 +82,18 @@ export function styleDirectories({ home, agentDir, root }: StyleDirs): { dir: st
 
 export function loadOutputStyles(dirs: StyleDirs): Record<string, OutputStyle> {
 	const styles: Record<string, OutputStyle> = { ...BUILTIN_STYLES };
+	const groups: { files: string[]; source: OutputStyle["source"] }[] = [{ files: dirs.pluginFiles ?? [], source: "plugin" }];
 	for (const { dir, source } of styleDirectories(dirs)) {
-		let names: string[];
 		try {
-			names = readdirSync(dir)
+			const names = readdirSync(dir)
 				.filter((n) => n.endsWith(".md"))
 				.sort();
-		} catch {
-			continue;
-		}
-		for (const file of names) {
-			const full = join(dir, file);
+			groups.push({ files: names.map((n) => join(dir, n)), source });
+		} catch {}
+	}
+	for (const { files, source } of groups) {
+		for (const full of files) {
+			const file = basename(full);
 			try {
 				const info = lstatSync(full);
 				if (!info.isFile() || info.size > MAX_STYLE_FILE) continue;

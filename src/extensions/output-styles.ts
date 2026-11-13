@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { type ExtensionAPI, type ExtensionContext, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { loadOutputStyles, type OutputStyle, settingsStyle } from "../core/output-styles.ts";
 import { projectRoot } from "../memory/instructions.ts";
+import { activePluginComponents } from "../plugins/active.ts";
 
 export const OUTPUT_STYLE_ENTRY = "oasis-output-style";
 
@@ -29,6 +30,7 @@ export function createOutputStylesExtension(options: OutputStyleOptions = {}) {
 				home: options.home ?? homedir(),
 				agentDir: agentDir(),
 				root: ctx.isProjectTrusted() ? projectRoot(ctx.cwd) : undefined,
+				pluginFiles: activePluginComponents(agentDir(), { home: options.home, env }).flatMap((p) => p.outputStyles),
 			});
 
 		pi.registerFlag("output-style", {
