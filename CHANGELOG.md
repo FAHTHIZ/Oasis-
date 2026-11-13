@@ -4,6 +4,7 @@
 
 ### Added
 
+- `/goal` and `--goal`: work until a strict reviewer says a condition holds (original OASIS, Codex /goal).
 - Conservative cheap-model routing (original OASIS model routing, Hermes smart_model_routing): `OASIS_EASY_MODEL`, `/route`.
 - Session scratch space (`.oasis/scratch/<session>/`, git-ignored, excluded from turn-gate change counts, pruned after 7 days) and the follow-up ledger (`/followups`), both ported from the original OASIS.
 - Per-model circuit breakers for the fallback chain (`src/core/circuit-breaker.ts`, ported from the original OASIS): after two failed runs a model is skipped until a cooldown with exponential backoff, then probed once; `/breakers`.

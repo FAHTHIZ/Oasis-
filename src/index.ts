@@ -57,6 +57,7 @@ export {
 	testTamperGate,
 	unverifiedEditsGate,
 } from "./core/gates.ts";
+export { type GoalJudge, type GoalState, modelJudge, parseVerdict, transcriptOf } from "./core/goal.ts";
 export {
 	announcesNextStep,
 	asksForAction,

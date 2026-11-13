@@ -10,6 +10,7 @@ import { createDoctorExtension } from "./doctor.ts";
 import { createEditMatchExtension } from "./edit-match.ts";
 import { createFollowupsExtension } from "./followups.ts";
 import { createGitSafetyExtension } from "./git-safety.ts";
+import { createGoalExtension } from "./goal.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
@@ -95,6 +96,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
 		{ name: "oasis-checkpoints", factory: createCheckpointsExtension() },
 		{ name: "oasis-turn-gates", factory: createTurnGatesExtension() },
+		// After the gates: a goal is judged only when nothing else continues the run.
+		{ name: "oasis-goal", factory: createGoalExtension() },
 		// Read dedup, superseded-result stubs and bash output condensing.
 		{ name: "oasis-context-savings", factory: createContextSavingsExtension() },
 		// Edits that drifted in indentation, spacing or line-number prefixes; closest-match hints.
