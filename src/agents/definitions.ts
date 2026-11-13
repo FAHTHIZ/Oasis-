@@ -36,6 +36,8 @@ export interface AgentDefinition {
 	maxTurns?: number;
 	/** Plan permission mode: bash is limited to read-only commands and edit/write are blocked. */
 	readOnly?: boolean;
+	/** "worktree": run in a fresh git worktree on its own branch (Claude Code's isolation). */
+	isolation?: "worktree";
 	source: AgentSource;
 	path?: string;
 }
@@ -141,6 +143,7 @@ export function parseAgentFile(path: string, source: AgentSource): AgentDefiniti
 		model: typeof fm.model === "string" ? fm.model.trim() : undefined,
 		maxTurns: Number.isFinite(maxTurns) && maxTurns > 0 ? Math.floor(maxTurns) : undefined,
 		readOnly: fm.permissionMode === "plan" || fm.permission_mode === "plan" || undefined,
+		isolation: fm.isolation === "worktree" ? "worktree" : undefined,
 		source,
 		path,
 	};

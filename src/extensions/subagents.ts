@@ -13,9 +13,14 @@
  * - Optional `output_schema`: the reply must be JSON matching it; the child
  *   gets one turn to fix a mismatch.
  * - Children can start their own subagents down to a fixed depth.
- * - `/agents` lists the available agents.
+ * - `isolation: "worktree"` (or `isolation: worktree` in an agent's
+ *   frontmatter) runs the agent in its own git worktree and branch; its
+ *   changes come back as a commit on that branch (src/agents/worktrees.ts).
+ * - `/agents` lists the available agents, `/worktrees` the agent worktrees.
  */
 
+import { realpathSync } from "node:fs";
+import { join, relative } from "node:path";
 import type { Model } from "@earendil-works/pi-ai";
 import { StringEnum } from "@earendil-works/pi-ai";
 import {
@@ -30,6 +35,15 @@ import { Type } from "typebox";
 import { type AgentDefinition, discoverAgents } from "../agents/definitions.ts";
 import { runSubagent, type SubagentResult } from "../agents/runner.ts";
 import type { JsonSchema } from "../agents/schema.ts";
+import {
+	createWorktree,
+	type FinishResult,
+	finishWorktree,
+	gitTopLevel,
+	listWorktrees,
+	type Worktree,
+	worktreeSetupSummary,
+} from "../agents/worktrees.ts";
 import { projectRoot } from "../memory/instructions.ts";
 
 export const MAX_PARALLEL_TASKS = 8;
@@ -50,6 +64,7 @@ export interface SubagentOptions {
 	isolatedResources?: boolean;
 	/** Load project agents even when the project is not trusted. */
 	trustProjectAgents?: boolean;
+	env?: NodeJS.ProcessEnv;
 }
 
 interface TaskSpec {
@@ -91,6 +106,19 @@ async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T, index: nu
 	};
 	await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
 	return out;
+}
+
+function formatWorktree(wt: Worktree, done: FinishResult | undefined, error: string | undefined): string {
+	if (error) return `Worktree ${wt.relative} (branch ${wt.branch}) was kept: ${error}`;
+	if (!done) return "";
+	if (!done.changed) return "Worktree: no changes, so the worktree and its branch were removed.";
+	if (done.kept) return `Worktree: ${done.kept} Branch ${done.branch}.`;
+	return [
+		`Worktree: committed ${done.commit} on branch ${done.branch} (${done.files?.length ?? 0} file(s) changed). Review with \`git diff HEAD...${done.branch}\`, merge with \`git merge ${done.branch}\`; remove with \`git worktree remove ${wt.relative} && git branch -D ${done.branch}\`.`,
+		done.diffStat ?? "",
+	]
+		.filter(Boolean)
+		.join("\n");
 }
 
 function formatResult(r: SubagentResult, label: string): string {
@@ -165,6 +193,12 @@ export function createSubagentExtension(options: SubagentOptions) {
 				),
 				model: Type.Optional(Type.String({ description: "Model override: inherit, an alias such as haiku, or provider/model-id." })),
 				thoroughness: Type.Optional(StringEnum(["quick", "medium", "very thorough"] as const)),
+				isolation: Type.Optional(
+					StringEnum(["worktree"] as const, {
+						description:
+							"worktree: each agent works in its own git worktree and branch, so parallel agents can edit without touching the user's checkout. Its changes come back as a commit on that branch.",
+					}),
+				),
 			}),
 			async execute(_id, params, signal, onUpdate, ctx) {
 				const specs: TaskSpec[] = params.tasks?.length
@@ -196,11 +230,28 @@ export function createSubagentExtension(options: SubagentOptions) {
 				report();
 
 				const results = await mapLimit(resolved, TASK_CONCURRENCY, async ({ spec, agent, model }, i) => {
-					const prompt = params.thoroughness ? `${spec.prompt}\n\nThoroughness: ${params.thoroughness}.` : spec.prompt;
+					let prompt = params.thoroughness ? `${spec.prompt}\n\nThoroughness: ${params.thoroughness}.` : spec.prompt;
+					let cwd = ctx.cwd;
+					let worktree: Worktree | undefined;
+					let top: string | undefined;
+					if ((params.isolation ?? agent.isolation) === "worktree" && !agent.readOnly) {
+						top = await gitTopLevel(ctx.cwd, options.env);
+						if (!top) throw new Error('task: isolation "worktree" needs a git repository.');
+						status[i] = "creating worktree";
+						report();
+						worktree = await createWorktree(top, spec.description || agent.name, {
+							env: options.env,
+							trusted: ctx.isProjectTrusted(),
+							signal,
+						});
+						cwd = join(worktree.path, relative(top, realpathSync(ctx.cwd)));
+						const setup = worktreeSetupSummary(worktree.setup);
+						prompt = `${prompt}\n\nYou are working in an isolated git worktree at ${cwd} on branch ${worktree.branch}, a copy of the project at its last commit (uncommitted changes in the main checkout are not here). Edit files here; your changes are committed on the branch when you finish.${setup ? ` ${setup}` : ""}`;
+					}
 					const result = await runSubagent({
 						agent,
 						prompt,
-						cwd: ctx.cwd,
+						cwd,
 						agentDir: options.agentDir ?? getAgentDir(),
 						model,
 						modelRuntime,
@@ -215,6 +266,16 @@ export function createSubagentExtension(options: SubagentOptions) {
 							report();
 						},
 					});
+					if (worktree && top) {
+						let finished: FinishResult | undefined;
+						let failure: string | undefined;
+						try {
+							finished = await finishWorktree(top, worktree, { message: spec.description || spec.prompt.split("\n")[0], env: options.env });
+						} catch (error) {
+							failure = (error as Error).message;
+						}
+						result.output = [result.output, formatWorktree(worktree, finished, failure)].filter(Boolean).join("\n\n");
+					}
 					status[i] = result.error ? `stopped (${result.error})` : "done";
 					report();
 					return result;
@@ -223,6 +284,20 @@ export function createSubagentExtension(options: SubagentOptions) {
 				const body = results.map((r, i) => formatResult(r, resolved[i]?.spec.description ?? "")).join("\n\n---\n\n");
 				if (results.every((r) => r.error && !r.output)) throw new Error(body);
 				return text(body, { results: results.map(({ output: _o, ...meta }) => meta) });
+			},
+		});
+
+		pi.registerCommand("worktrees", {
+			description: "List the git worktrees subagents left for review",
+			handler: async (_args, ctx) => {
+				const top = await gitTopLevel(ctx.cwd, options.env);
+				const items = top ? await listWorktrees(top, options.env) : [];
+				ctx.ui.notify(
+					items.length
+						? items.map((w) => `${w.branch ?? "(detached)"}  ${w.path}`).join("\n")
+						: "No subagent worktrees. Run a task with isolation: worktree to create one.",
+					"info",
+				);
 			},
 		});
 

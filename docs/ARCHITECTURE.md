@@ -164,6 +164,10 @@ The extension sits after tool repair and before safety and the sandbox, so a rew
 
 The sandbox runtime is a process-wide singleton, so child sandbox extensions run with `inherit: true`: they copy the main session's mode and roots at start and never initialise or reset the runtime, which would otherwise switch the parent's sandbox off when a child exits.
 
+### Worktree isolation
+
+`src/agents/worktrees.ts`, ported from the original OASIS. With `isolation: "worktree"` the task tool runs `git worktree add -b oasis/<slug>-<hex> .oasis/worktrees/<name> HEAD` from the repository top level (serialized per repository, retried on git lock errors; `.oasis/worktrees/` goes into `.git/info/exclude`) and starts the child in the matching subdirectory. When the child finishes, a worktree with no changes is removed with its branch; otherwise the changes are committed on the branch with `--no-verify`, unless a changed path looks sensitive (`.env`, keys, credentials) or a file contains a secret, in which case the worktree is kept uncommitted for review. The report tells the parent how to review, merge and remove it. Setup files from other tools run in each new worktree, only in trusted projects: `.cursor/worktrees.json`, `.windsurf/hooks.json` `post_setup_worktree`, `.openhands/setup.sh` (`OASIS_WORKTREE_SETUP=0` skips them).
+
 ## Tests
 
 `test/harness.ts` builds a real `AgentSession` in a temp directory with an in-memory session manager, in-memory settings, and pi-ai's faux provider registered on a `ModelRuntime`. Tests script model turns with `fauxAssistantMessage`, `fauxToolCall` and `fauxText`, run `session.prompt()`, then assert on files written, model calls made and session entries recorded. No network, no model, about a second for the whole suite.

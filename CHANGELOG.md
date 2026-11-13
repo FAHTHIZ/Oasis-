@@ -4,6 +4,7 @@
 
 ### Added
 
+- Worktree isolation for subagents (`isolation: "worktree"`), ported from the original OASIS: own branch in `.oasis/worktrees/`, commit on finish with a secret check, removal when unchanged, Cursor/Windsurf/OpenHands setup files, `/worktrees`.
 - Context savings, ported from the original OASIS: read dedup pointers, superseded `read`/`bash` result stubs once the context is half full, and bash output condensing (passing tests, npm banners, progress redraws).
 - MCP: Claude Code's servers (`~/.claude.json` user and local scopes, `.mcp.json` in trusted projects) are registered with pi's MCP client; `OASIS_CLAUDE_MCP=0` skips them. Tool poisoning and rug-pull checks, ported from OASIS 1.x: MCP tool definitions are scanned and fingerprinted on first use (`~/.oasis/agent/mcp-pins.json`), and poisoned or changed tools need approval.
 - Protected configuration paths, ported from OASIS 1.x: `write`, `edit` and `bash` changes to settings, hooks, plugins, MCP/LSP config, project agents and commands, git hooks and config, editor tasks, dev containers, direnv, commit hooks and package-manager config need confirmation (blocked without a UI). Symlinked targets are resolved.

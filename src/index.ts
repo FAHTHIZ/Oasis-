@@ -1,3 +1,13 @@
+export {
+	createWorktree,
+	finishWorktree,
+	gitTopLevel,
+	listWorktrees,
+	removeWorktree,
+	runWorktreeSetup,
+	type Worktree,
+	worktreeSetupPlan,
+} from "./agents/worktrees.ts";
 export { CheckpointError, type FileChange, isCheckpointableDir, type RestoreResult, ShadowRepo } from "./checkpoints/shadow-git.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
