@@ -6,6 +6,9 @@ const argv = applySafeMode(process.argv.slice(2)).argv;
 if (argv[0] === "cron") {
 	const { cronCli } = await import("./cron/cli.ts");
 	process.exitCode = await cronCli(argv.slice(1));
+} else if (argv[0] === "acp") {
+	const { runAcp } = await import("./acp.ts");
+	await runAcp();
 } else if (argv[0] === "doctor") {
 	const [{ getAgentDir, ProjectTrustStore }, { formatDoctor, runDoctor }] = await Promise.all([
 		import("@earendil-works/pi-coding-agent"),

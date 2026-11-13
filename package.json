@@ -64,6 +64,7 @@
 		"linkedom": "0.18.15",
 		"minimatch": "11.0.3",
 		"minisearch": "^7.2.0",
+		"pi-acp": "^0.0.34",
 		"smol-toml": "^1.9.1",
 		"typebox": "1.4.7",
 		"unbash": "6.0.4",
