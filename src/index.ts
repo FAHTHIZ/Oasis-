@@ -124,6 +124,7 @@ export { createPluginsExtension, PLUGIN_USAGE, type PluginsOptions } from "./ext
 export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { createReviewExtension, reviewBase, reviewInstructions, reviewTarget, securityReviewPrompt } from "./extensions/review.ts";
+export { createRunLimitsExtension } from "./extensions/run-limits.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
 export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
@@ -156,6 +157,7 @@ export {
 export { formatWorkingDiff, workingDiff } from "./git/diff-view.ts";
 export { buildTask, type GitHubEvent, type GitHubTask, githubApi, githubCli, mentions, replyBody } from "./github/action.ts";
 export { fetchPrComments, formatPrComments } from "./github/pr-comments.ts";
+export { checkAnswer, extractJson, loadOutputSchema } from "./headless/output-schema.ts";
 export { collectInsights, formatInsights } from "./insights/usage.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";

@@ -38,6 +38,7 @@ import { createProtectedPathsExtension } from "./protected-paths.ts";
 import { createReliabilityExtension } from "./reliability.ts";
 import { createRepoMapExtension } from "./repo-map.ts";
 import { createReviewExtension } from "./review.ts";
+import { createRunLimitsExtension } from "./run-limits.ts";
 import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
 import { createScratchExtension } from "./scratch.ts";
@@ -116,6 +117,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-command-bangs", factory: createCommandBangsExtension() },
 		{ name: "oasis-context-view", factory: createContextViewExtension() },
 		{ name: "oasis-insights", factory: createInsightsExtension() },
+		{ name: "oasis-run-limits", factory: createRunLimitsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

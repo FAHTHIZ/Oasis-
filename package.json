@@ -55,6 +55,8 @@
 		"@slack/bolt": "^5.1.0",
 		"@slack/web-api": "^8.4.0",
 		"@vscode/tree-sitter-wasm": "^0.3.1",
+		"ajv": "^8.20.0",
+		"ajv-formats": "^3.0.1",
 		"croner": "^9.1.0",
 		"defuddle": "0.19.6",
 		"diff": "9.0.0",
