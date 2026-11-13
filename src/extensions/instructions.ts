@@ -8,7 +8,8 @@
  * - Path-scoped rules and CLAUDE.md/AGENTS.md files in subdirectories are
  *   attached to the first read/edit/write result that touches a matching
  *   file, once per session (again after compaction).
- * - Claude Code skill folders (~/.claude/skills, <root>/.claude/skills) and
+ * - Claude Code skill folders (~/.claude/skills, <root>/.claude/skills), the
+ *   cross-agent .agents/skills folders (home, ~/.config/agents, project) and
  *   commands (.claude/commands) load as pi skills and prompt templates.
  * - `/instructions` lists what is loaded.
  */
@@ -58,9 +59,18 @@ export function createInstructionsExtension(options: InstructionsOptions = {}) {
 
 		pi.on("resources_discover", (event) => {
 			if (!enabled()) return undefined;
-			const bases = [join(options.home ?? homedir(), ".claude"), join(projectRoot(event.cwd), ".claude")];
+			const home = options.home ?? homedir();
+			const root = projectRoot(event.cwd);
+			const bases = [join(home, ".claude"), join(root, ".claude")];
 			const existing = (sub: string) => [...new Set(bases.map((b) => join(b, sub)))].filter((p) => existsSync(p));
-			return { skillPaths: existing("skills"), promptPaths: existing("commands") };
+			// Cross-agent skill folders (agentskills.io, the skills.sh CLI's "universal" target).
+			const shared = [
+				join(home, ".agents", "skills"),
+				join(process.env.XDG_CONFIG_HOME ?? join(home, ".config"), "agents", "skills"),
+				join(root, ".agents", "skills"),
+			];
+			const skillPaths = [...new Set([...existing("skills"), ...shared.filter((p) => existsSync(p))])];
+			return { skillPaths, promptPaths: existing("commands") };
 		});
 
 		pi.on("before_agent_start", (event, ctx) => {

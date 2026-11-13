@@ -25,12 +25,16 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 import { runSubagent } from "../agents/runner.ts";
+import { projectRoot } from "../memory/instructions.ts";
+import { runSkillsCli, SKILLS_HUB_USAGE, type SkillsRunner, skillsCliArgs } from "../skills/hub.ts";
 import { findSkillDir, SkillError, SkillManager, type SkillOperation } from "../skills/manage.ts";
 import { condenseTranscript, REVIEW_AGENT, REVIEW_PROMPT } from "../skills/review.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { safetyExtension } from "./safety.ts";
 
 export interface SkillsOptions {
+	/** Runs the `skills` CLI for /skills add|find|update|remove (tests). */
+	skillsCli?: SkillsRunner;
 	/** Where user-scope skills are created. Default: <agent dir>/skills. */
 	userDir?: string;
 	/** Extra directories searched for existing skills (tests). */
@@ -212,14 +216,37 @@ export function createSkillsExtension(options: SkillsOptions = {}) {
 		});
 
 		pi.registerCommand("skills", {
-			description: "List loaded skills and where they live",
-			handler: async (_args, ctx) => {
+			description: "List skills, or install from the Skills Hub: /skills add <owner/repo|url> [skill...] [-g], find, update, remove",
+			getArgumentCompletions: (prefix: string) =>
+				["add", "find", "update", "remove", "help"].filter((s) => s.startsWith(prefix.trim())).map((s) => ({ value: s, label: s })),
+			handler: async (args, ctx) => {
+				const sub = args.trim().split(/\s+/)[0] ?? "";
+				if (sub === "help" || (sub && !skillsCliArgs(args))) return ctx.ui.notify(SKILLS_HUB_USAGE, sub === "help" ? "info" : "warning");
+				const cliArgs = skillsCliArgs(args);
+				if (cliArgs) {
+					const global = cliArgs.includes("-g");
+					const cwd = global ? homedir() : projectRoot(ctx.cwd);
+					ctx.ui.setStatus("oasis-skills", `skills ${cliArgs[0]}…`);
+					const result = await (options.skillsCli ?? runSkillsCli)(cliArgs, cwd).finally(() => ctx.ui.setStatus("oasis-skills", undefined));
+					const tail = result.output.split("\n").slice(-30).join("\n");
+					ctx.ui.notify(tail || `skills ${cliArgs[0]} exited with ${result.code}`, result.code === 0 ? "info" : "error");
+					if (result.code === 0 && ["add", "update", "remove"].includes(cliArgs[0] ?? "")) {
+						// Pick the new skills up now; the old context is stale afterwards.
+						await ctx.reload().catch(() => ctx.ui.notify("Run /reload to load the changes.", "info"));
+					}
+					return;
+				}
 				const skills = pi.getCommands().filter((c) => c.source === "skill");
 				const lines = skills.map(
 					(s) =>
 						`${s.name.replace(/^skill:/, "")}  ${s.sourceInfo.path.replace(homedir(), "~")}${s.description ? `\n  ${s.description}` : ""}`,
 				);
-				ctx.ui.notify(lines.length ? lines.join("\n") : "No skills loaded. The agent saves skills with skill_manage.", "info");
+				ctx.ui.notify(
+					lines.length
+						? lines.join("\n")
+						: "No skills loaded. Install some with /skills add <owner/repo>, or the agent saves them with skill_manage.",
+					"info",
+				);
 			},
 		});
 	};

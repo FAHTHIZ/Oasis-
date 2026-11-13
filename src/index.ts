@@ -211,6 +211,7 @@ export { analyzeCheck, type CheckAnalysis, isCheckCommand } from "./shell/checks
 export { MonitorFeed, stripControl } from "./shell/monitor.ts";
 export { evaluateShellCommand, type ShellVerdict } from "./shell/policy.ts";
 export { analyzeShellRisk, isCriticalPath, type ShellRisk } from "./shell/risk.ts";
+export { cleanCliOutput, runSkillsCli, SKILLS_HUB_USAGE, type SkillsRunner, skillsCliArgs } from "./skills/hub.ts";
 export {
 	isOpen,
 	latestTodos,
