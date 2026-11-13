@@ -4,6 +4,7 @@
 
 ### Added
 
+- Web access, ported from OASIS 1.x: `web_fetch` (SSRF-safe with pinned DNS and re-vetted redirects, Defuddle HTML to Markdown, paging, Markdown content negotiation, GitHub blob to raw) and `web_search` (Tavily, Brave, Exa, Firecrawl, SearXNG with reciprocal rank fusion; keyless DuckDuckGo with a Bing fallback). An untrusted-content guard strips hidden Unicode from external results, flags prompt injections and then holds outbound shell commands for approval.
 - Background learning review: after a run with 15+ tool calls and nothing saved, a reviewer subagent reads a condensed transcript and saves skills or memories in the background. `--learning background|nudge|off`.
 - Skills as procedural memory: the `skill_manage` tool (create, patch, delete, write_file, remove_file) with spec validation, misplaced-field rejection, path confinement, content scanning and lint warnings, a learning nudge after long runs that saved nothing, and `/skills`.
 - Plan mode: `/plan`, `/plan <task>` and `--plan` keep the agent read-only until you approve its plan through the `exit_plan_mode` tool. A shell classifier (`src/shell/readonly.ts`) lets read-only `bash` commands through. Explore and plan subagents, and custom agents with `permissionMode: plan`, now get read-only `bash`. Hooks report `permission_mode: "plan"` while it is on.

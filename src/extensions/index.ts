@@ -13,6 +13,7 @@ import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
 import { createTurnGatesExtension } from "./turn-gates.ts";
+import { createWebExtension } from "./web.ts";
 
 /** The OASIS extension set, loaded into every session. */
 export function oasisExtensions(): InlineExtension[] {
@@ -33,6 +34,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
+		// web_fetch, web_search and the untrusted-content guard.
+		{ name: "oasis-web", factory: createWebExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
 		{ name: "oasis-skills", factory: createSkillsExtension() },
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
@@ -57,6 +60,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-hooks", factory: createHooksExtension({ depth }) },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
+		{ name: "oasis-web", factory: createWebExtension() },
 		...(depth < MAX_DEPTH
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]
 			: []),
