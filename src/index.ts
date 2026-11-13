@@ -132,6 +132,8 @@ export {
 	type GatewaySession,
 	parseAllowlist,
 } from "./gateway/core.ts";
+export { createDiscordGateway, DISCORD_MAX_MESSAGE, stripDiscordMention } from "./gateway/discord.ts";
+export { createSlackGateway, SLACK_MAX_MESSAGE, slackChatKey, stripSlackMention } from "./gateway/slack.ts";
 export { addressedText, createTelegramGateway, TELEGRAM_MAX_MESSAGE } from "./gateway/telegram.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
