@@ -91,3 +91,22 @@ describe("gateway", () => {
 		expect(sent.at(-1)).toContain("/stop");
 	});
 });
+
+describe("gateway adapters", () => {
+	it("keys Slack chats by DM or thread and strips mentions", async () => {
+		const { slackChatKey, stripSlackMention } = await import("../src/gateway/slack.ts");
+		expect(slackChatKey({ channel: "D1", channel_type: "im", ts: "1.0" })).toBe("D1");
+		expect(slackChatKey({ channel: "C1", ts: "2.0", thread_ts: "1.0" })).toBe("C1:1.0");
+		expect(stripSlackMention("<@U9> run tests", "U9")).toBe("run tests");
+	});
+
+	it("strips Discord mentions", async () => {
+		const { stripDiscordMention } = await import("../src/gateway/discord.ts");
+		expect(stripDiscordMention("<@!42> hi <@42>", "42")).toBe("hi");
+	});
+
+	it("prints usage for unknown platforms", async () => {
+		const { gatewayCli } = await import("../src/gateway/cli.ts");
+		expect(await gatewayCli(["irc"], {})).toBe(2);
+	});
+});

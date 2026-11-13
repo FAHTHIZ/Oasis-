@@ -8,7 +8,7 @@
  */
 import { join } from "node:path";
 import { Bot } from "grammy";
-import { ChatGateway, chunkText, type GatewaySession, parseAllowlist } from "./core.ts";
+import { ChatGateway, chunkText, type GatewaySession } from "./core.ts";
 
 export const TELEGRAM_MAX_MESSAGE = 4096;
 
@@ -71,35 +71,4 @@ export function createTelegramGateway(options: TelegramGatewayOptions) {
 			await gateway.stop();
 		},
 	};
-}
-
-export async function gatewayCli(argv: string[], env: NodeJS.ProcessEnv = process.env): Promise<number> {
-	const platform = argv[0];
-	if (platform !== "telegram") {
-		console.error(
-			'Usage: oasis gateway telegram\n  TELEGRAM_BOT_TOKEN       bot token from @BotFather\n  OASIS_TELEGRAM_ALLOWED_USERS  comma-separated Telegram user ids ("*" for anyone)',
-		);
-		return 2;
-	}
-	const token = env.TELEGRAM_BOT_TOKEN;
-	if (!token) {
-		console.error("Set TELEGRAM_BOT_TOKEN (create a bot with @BotFather).");
-		return 2;
-	}
-	const allowedUsers = parseAllowlist(env.OASIS_TELEGRAM_ALLOWED_USERS);
-	if (!allowedUsers.length) console.error("No OASIS_TELEGRAM_ALLOWED_USERS set: the bot will only tell people their user id.");
-	const [{ getAgentDir }, { sessionOpener }] = await Promise.all([import("@earendil-works/pi-coding-agent"), import("./session.ts")]);
-	const agentDir = getAgentDir();
-	const telegram = createTelegramGateway({
-		token,
-		allowedUsers,
-		agentDir,
-		openSession: sessionOpener(process.cwd(), agentDir),
-		log: (line) => console.error(line),
-	});
-	const shutdown = () => void telegram.stop().finally(() => process.exit(0));
-	process.once("SIGINT", shutdown);
-	process.once("SIGTERM", shutdown);
-	await telegram.start();
-	return 0;
 }

@@ -7,7 +7,7 @@ if (argv[0] === "cron") {
 	const { cronCli } = await import("./cron/cli.ts");
 	process.exitCode = await cronCli(argv.slice(1));
 } else if (argv[0] === "gateway") {
-	const { gatewayCli } = await import("./gateway/telegram.ts");
+	const { gatewayCli } = await import("./gateway/cli.ts");
 	process.exitCode = await gatewayCli(argv.slice(1));
 } else if (argv[0] === "acp") {
 	const { runAcp } = await import("./acp.ts");
