@@ -124,6 +124,7 @@ export { todoExtension } from "./extensions/todo.ts";
 export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
+export { addServerToFile, findPreset, MCP_PRESETS, type McpPreset, removeServerFromFile } from "./mcp/presets.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
 export { CorrectionStore, correctionViolations, extractCorrections } from "./memory/corrections.ts";
 export { extractFollowups, type Followup, FollowupStore, formatFollowups } from "./memory/followups.ts";

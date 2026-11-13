@@ -18,6 +18,7 @@ import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createLspExtension } from "./lsp.ts";
 import { createMcpExtension } from "./mcp.ts";
+import { createMcpPresetsExtension } from "./mcp-presets.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { createModelRoutingExtension } from "./model-routing.ts";
 import { createNoopEditExtension } from "./noop-edit.ts";
@@ -102,6 +103,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-side-questions", factory: createSideQuestionsExtension() },
 		{ name: "oasis-status-line", factory: createStatusLineExtension() },
 		{ name: "oasis-documents", factory: createDocumentsExtension() },
+		{ name: "oasis-mcp-presets", factory: createMcpPresetsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

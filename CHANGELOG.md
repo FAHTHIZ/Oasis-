@@ -4,6 +4,7 @@
 
 ### Added
 
+- `/mcp-add` and `/mcp-remove`: one-command setup for 15 well-known MCP servers (Playwright, Chrome DevTools, Context7, DeepWiki, GitHub, Sentry, Linear, Notion, Supabase, Stripe, Vercel, Cloudflare docs, Hugging Face, Exa, memory).
 - `read` understands PDF and Word documents (unpdf, mammoth).
 - Monitors: `bash` with `monitor: true` streams output lines to the agent as events; background commands report when they exit.
 - Claude Code-compatible `statusLine` commands in the footer.
