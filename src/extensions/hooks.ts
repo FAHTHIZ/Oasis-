@@ -23,6 +23,7 @@
 
 import type { CustomMessageEntryDraft, ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import { isSafeMode } from "../core/safe-mode.ts";
 import { claudeToolName, fromClaudeInput, matcherNames, toClaudeInput, toolResponse } from "../hooks/claude.ts";
 import { type HookConfig, type HookEvent, type LoadedHooks, loadHooks, matchingHandlers } from "../hooks/config.ts";
 import { combine, type HookVerdict, runHooks } from "../hooks/run.ts";
@@ -70,6 +71,10 @@ export function createHooksExtension(options: HooksOptions = {}) {
 			root = projectRoot(ctx.cwd);
 			if (options.config) {
 				loaded = { config: options.config, files: [], warnings: [], disabled: false };
+				return loaded;
+			}
+			if (isSafeMode()) {
+				loaded = { config: {}, files: [], warnings: [], disabled: true };
 				return loaded;
 			}
 			loaded = loadHooks({
@@ -252,7 +257,7 @@ export function createHooksExtension(options: HooksOptions = {}) {
 			handler: async (_args, ctx) => {
 				load(ctx);
 				if (loaded.disabled) {
-					ctx.ui.notify("Hooks are turned off (disableAllHooks).", "info");
+					ctx.ui.notify(isSafeMode() ? "Hooks are off in safe mode." : "Hooks are turned off (disableAllHooks).", "info");
 					return;
 				}
 				const lines: string[] = [];

@@ -44,6 +44,7 @@ import {
 	type Worktree,
 	worktreeSetupSummary,
 } from "../agents/worktrees.ts";
+import { isSafeMode } from "../core/safe-mode.ts";
 import { projectRoot } from "../memory/instructions.ts";
 
 export const MAX_PARALLEL_TASKS = 8;
@@ -138,6 +139,7 @@ export function createSubagentExtension(options: SubagentOptions) {
 				agentDir: options.agentDir ?? getAgentDir(),
 				home: options.home,
 				includeProject: options.trustProjectAgents || ctx.isProjectTrusted(),
+				builtinOnly: isSafeMode(),
 			});
 			return agents;
 		};

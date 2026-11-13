@@ -13,8 +13,10 @@
  *   with the fingerprint pinned on first use. Poisoned or changed tools need
  *   the user's approval, and are blocked without a UI.
  */
+
 import { join } from "node:path";
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
+import { isSafeMode } from "../core/safe-mode.ts";
 import { loadClaudeMcpServers } from "../mcp/claude.ts";
 import { inspectMcpTool, McpPins, parseMcpToolName, toolFingerprint } from "../mcp/trust.ts";
 
@@ -30,7 +32,7 @@ export interface McpOptions {
 export function createMcpExtension(options: McpOptions = {}) {
 	return function mcpExtension(pi: ExtensionAPI): void {
 		const env = options.env ?? process.env;
-		const useClaude = options.claude ?? !/^(0|false|off|no)$/i.test(env.OASIS_CLAUDE_MCP ?? "");
+		const useClaude = !isSafeMode(env) && (options.claude ?? !/^(0|false|off|no)$/i.test(env.OASIS_CLAUDE_MCP ?? ""));
 		let pins: McpPins | undefined;
 		const approved = new Set<string>();
 		let registered = new Set<string>();

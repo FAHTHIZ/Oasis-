@@ -12,10 +12,12 @@
  *   commands (.claude/commands) load as pi skills and prompt templates.
  * - `/instructions` lists what is loaded.
  */
+
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { isSafeMode } from "../core/safe-mode.ts";
 import {
 	collectInstructions,
 	type InstructionFile,
@@ -36,7 +38,7 @@ export const INSTRUCTIONS_TYPE = "oasis.instructions";
 const PATH_TOOLS = new Set(["read", "edit", "write", "ls", "grep", "find"]);
 
 function disabledByFlag(): boolean {
-	return process.argv.includes("--no-context-files") || process.argv.includes("-nc");
+	return process.argv.includes("--no-context-files") || process.argv.includes("-nc") || isSafeMode();
 }
 
 export function createInstructionsExtension(options: InstructionsOptions = {}) {

@@ -73,6 +73,7 @@ export {
 	THRASH_WARN_AT,
 	thrashNote,
 } from "./core/progress.ts";
+export { applySafeMode, isSafeMode, SAFE_MODE_NOTICE, SAFE_MODE_PI_FLAGS } from "./core/safe-mode.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
 export { cronCli } from "./cron/cli.ts";
 export { agentPrompt, defaultOasisCommand, type RunnerOptions, runJob, runNow, SILENT_MARKER, tick } from "./cron/runner.ts";

@@ -4,6 +4,7 @@
 
 ### Added
 
+- `--safe-mode` (`src/core/safe-mode.ts`), also via `OASIS_SAFE_MODE` or `CLAUDE_CODE_SAFE_MODE`: no context files, skills, prompt templates, discovered extensions, hooks, MCP servers or custom agents; safety, permissions and memory stay on.
 - `oasis doctor [--fix]` and `/doctor [fix]` (`src/core/doctor.ts`): install and project health checks (runtime, tools, native modules, credentials, settings JSON, permission rules, hooks, MCP commands, instruction file size, language servers, trust, git locks, cron jobs) with safe repairs of OASIS-owned state.
 - Scheduled jobs following Hermes Agent's `cronjob` tool (`src/cron/`): agent or no-agent (script) jobs on cron expressions with time zones, intervals, delays, timestamps and plain phrases (croner); atomic, locked `cron/jobs.json` with per-slot claims, missed-slot grace windows, repeat limits, run logs and saved output; in-session ticker, `oasis cron daemon` and `oasis cron tick`; unseen results announced at session start; `/cron`. `OASIS_CRON=0`, `OASIS_CRON_IN_SESSION=0`, `OASIS_CRON_TIMEOUT_MS`.
 - Permission rules in Claude Code's `permissions` format (`src/security/permissions.ts`): allow, ask and deny lists from Claude and OASIS settings files with Bash command globs and legacy `:*` prefixes, gitignore-style Read/Edit paths, `WebFetch(domain:…)`, `Tool(param:value)`, MCP server rules and `*`; allow rules pre-approve the shell safety question; `/permissions`. `OASIS_PERMISSIONS=0`.

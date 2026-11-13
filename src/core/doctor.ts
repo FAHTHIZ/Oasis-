@@ -16,6 +16,7 @@ import { loadHooks } from "../hooks/config.ts";
 import { loadClaudeMcpServers } from "../mcp/claude.ts";
 import { projectRoot } from "../memory/instructions.ts";
 import { loadPermissions } from "../security/permissions.ts";
+import { isSafeMode } from "./safe-mode.ts";
 
 export type CheckStatus = "ok" | "info" | "warn" | "fail";
 
@@ -103,6 +104,8 @@ export async function runDoctor(options: DoctorOptions): Promise<DoctorReport> {
 	const fixed: string[] = [];
 	const add = (name: string, status: CheckStatus, detail: string, fixable?: string) => checks.push({ name, status, detail, fixable });
 
+	if (isSafeMode(env))
+		add("Safe mode", "info", "on: context files, skills, extensions, hooks, MCP servers and custom agents are not loaded");
 	// Runtime
 	const [major = 0, minor = 0] = process.versions.node.split(".").map(Number);
 	const nodeOk = major > MIN_NODE[0] || (major === MIN_NODE[0] && minor >= MIN_NODE[1]);

@@ -1,7 +1,8 @@
 import { main } from "@earendil-works/pi-coding-agent";
+import { applySafeMode } from "./core/safe-mode.ts";
 import { oasisExtensions } from "./extensions/index.ts";
 
-const argv = process.argv.slice(2);
+const argv = applySafeMode(process.argv.slice(2)).argv;
 if (argv[0] === "cron") {
 	const { cronCli } = await import("./cron/cli.ts");
 	process.exitCode = await cronCli(argv.slice(1));

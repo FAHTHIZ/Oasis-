@@ -173,17 +173,21 @@ export interface DiscoverOptions {
 	home?: string;
 	/** Load project agents. They are repository-controlled prompts. Default true. */
 	includeProject?: boolean;
+	/** Only the built-in agents (safe mode). */
+	builtinOnly?: boolean;
 }
 
 /** All agents by name; project definitions override user ones, which override built-ins. */
 export function discoverAgents(options: DiscoverOptions = {}): Map<string, AgentDefinition> {
 	const home = options.home ?? homedir();
 	const all: AgentDefinition[] = [...BUILTIN_AGENTS];
-	all.push(...readDir(join(home, ".claude", "agents"), "user"));
-	if (options.agentDir) all.push(...readDir(join(options.agentDir, "agents"), "user"));
-	if (options.root && options.includeProject !== false) {
-		all.push(...readDir(join(options.root, ".claude", "agents"), "project"));
-		all.push(...readDir(join(options.root, ".oasis", "agents"), "project"));
+	if (!options.builtinOnly) {
+		all.push(...readDir(join(home, ".claude", "agents"), "user"));
+		if (options.agentDir) all.push(...readDir(join(options.agentDir, "agents"), "user"));
+		if (options.root && options.includeProject !== false) {
+			all.push(...readDir(join(options.root, ".claude", "agents"), "project"));
+			all.push(...readDir(join(options.root, ".oasis", "agents"), "project"));
+		}
 	}
 	const byName = new Map<string, AgentDefinition>();
 	for (const def of all) byName.set(def.name, def);

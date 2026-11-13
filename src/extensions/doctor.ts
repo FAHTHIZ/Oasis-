@@ -4,6 +4,7 @@
  */
 import { type ExtensionAPI, getAgentDir } from "@earendil-works/pi-coding-agent";
 import { formatDoctor, runDoctor } from "../core/doctor.ts";
+import { isSafeMode, SAFE_MODE_NOTICE } from "../core/safe-mode.ts";
 
 export interface DoctorExtensionOptions {
 	agentDir?: string;
@@ -13,6 +14,9 @@ export interface DoctorExtensionOptions {
 
 export function createDoctorExtension(options: DoctorExtensionOptions = {}) {
 	return (pi: ExtensionAPI) => {
+		pi.on("session_start", async (_event, ctx) => {
+			if (isSafeMode(options.env) && ctx.hasUI) ctx.ui.notify(SAFE_MODE_NOTICE, "warning");
+		});
 		pi.registerCommand("doctor", {
 			description: "Check the OASIS install and this project; /doctor fix repairs stale locks, stuck jobs and leftover files",
 			handler: async (args, ctx) => {
