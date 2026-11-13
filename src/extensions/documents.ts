@@ -1,7 +1,7 @@
 /**
- * `read` on a .pdf or .docx returns the document's text (see
- * src/documents/extract.ts). For PDFs, offset is the first page and limit
- * the number of pages. OASIS_DOCUMENTS=0 turns it off.
+ * `read` on a .pdf, .docx, .pptx or spreadsheet (.xlsx, .xls, .ods) returns
+ * its text (see src/documents/extract.ts). Offset is the first page, slide or
+ * sheet and limit the count. OASIS_DOCUMENTS=0 turns it off.
  */
 import { isAbsolute, resolve } from "node:path";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
