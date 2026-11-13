@@ -4,7 +4,7 @@
  * output-styles/ and bin/ at the plugin root, or the paths named in .claude-plugin/plugin.json. Paths must stay
  * inside the plugin root. ${CLAUDE_PLUGIN_ROOT} is replaced with the root.
  */
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve, sep } from "node:path";
 import { loadBundle } from "../mcp/mcpb.ts";
 
@@ -111,11 +111,28 @@ export function loadPluginComponents(root: string, options: { dataDir?: string }
 
 	let commands: string[];
 	if (manifest.commands && typeof manifest.commands === "object" && !Array.isArray(manifest.commands)) {
-		commands = Object.values(manifest.commands as Record<string, { source?: unknown }>).flatMap((entry) =>
-			typeof entry?.source === "string" ? paths("commands", entry.source) : [],
-		);
-		if (Object.values(manifest.commands).some((e) => typeof (e as { content?: unknown })?.content === "string"))
-			warnings.push(`${name}: inline command content is not supported yet`);
+		const entries = Object.entries(manifest.commands as Record<string, { source?: unknown; content?: unknown; description?: unknown }>);
+		commands = entries.flatMap(([, entry]) => (typeof entry?.source === "string" ? paths("commands", entry.source) : []));
+		// Inline commands become prompt files in the plugin's data folder.
+		const inline = entries.filter(([, entry]) => typeof entry?.content === "string" && typeof entry?.source !== "string");
+		if (inline.length) {
+			const dir = join(options.dataDir ?? join(root, ".oasis"), "inline-commands");
+			try {
+				mkdirSync(dir, { recursive: true });
+				for (const [command, entry] of inline) {
+					const safe = command.replace(/^\//, "").replace(/[^\w.:-]+/g, "-");
+					const content = String(entry.content);
+					const front =
+						typeof entry.description === "string" && !content.startsWith("---")
+							? `---\ndescription: ${JSON.stringify(entry.description)}\n---\n`
+							: "";
+					writeFileSync(join(dir, `${safe}.md`), `${front}${content}`);
+				}
+				commands.push(dir);
+			} catch (error) {
+				warnings.push(`${name}: could not write inline commands: ${(error as Error).message}`);
+			}
+		}
 	} else if (manifest.commands !== undefined) commands = paths("commands", manifest.commands);
 	else commands = existsSync(join(root, "commands")) ? [join(root, "commands")] : [];
 

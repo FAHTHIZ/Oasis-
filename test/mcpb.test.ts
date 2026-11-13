@@ -70,3 +70,20 @@ describe("MCP bundles", () => {
 		}
 	});
 });
+
+describe("plugin inline commands", () => {
+	it("writes inline command content to prompt files", () => {
+		const root = mkdtempSync(join(tmpdir(), "plug-"));
+		mkdirSync(join(root, ".claude-plugin"));
+		writeFileSync(
+			join(root, ".claude-plugin", "plugin.json"),
+			JSON.stringify({ name: "p", commands: { "/hello": { content: "Say hello to $ARGUMENTS", description: "Greets" } } }),
+		);
+		const c = loadPluginComponents(root, { dataDir: join(root, "data") });
+		expect(c.warnings).toEqual([]);
+		expect(c.commands).toEqual([join(root, "data", "inline-commands")]);
+		expect(readFileSync(join(root, "data", "inline-commands", "hello.md"), "utf8")).toBe(
+			'---\ndescription: "Greets"\n---\nSay hello to $ARGUMENTS',
+		);
+	});
+});
