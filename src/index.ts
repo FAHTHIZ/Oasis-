@@ -41,6 +41,7 @@ export { canCheckSyntax, checkFile, newProblems } from "./code/syntax-check.ts";
 export { condenseEnabled, condenseOutput } from "./context/condense.ts";
 export { readRange, supersedeResults } from "./context/supersede.ts";
 export { admitsUnverified, claimedFailedEdits, claimsPassing } from "./core/claims.ts";
+export { type CheckStatus, type DoctorCheck, type DoctorReport, formatDoctor, onPath, runDoctor } from "./core/doctor.ts";
 export {
 	DEFAULT_GATES,
 	emptyReplyGate,
@@ -89,6 +90,7 @@ export {
 export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
 export { createCronExtension } from "./extensions/cron.ts";
+export { createDoctorExtension } from "./extensions/doctor.ts";
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { createGitSafetyExtension } from "./extensions/git-safety.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
