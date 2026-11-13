@@ -14,6 +14,7 @@ import { safetyExtension } from "./safety.ts";
 import { createSandboxExtension } from "./sandbox.ts";
 import { createSecretShieldExtension } from "./secret-shield.ts";
 import { createSkillsExtension } from "./skills.ts";
+import { createStandingCorrectionsExtension } from "./standing-corrections.ts";
 import { createSubagentExtension, MAX_DEPTH } from "./subagents.ts";
 import { todoExtension } from "./todo.ts";
 import { toolRepairExtension } from "./tool-repair.ts";
@@ -25,6 +26,8 @@ export function oasisExtensions(): InlineExtension[] {
 	return [
 		// Memory sets a prompt section, so it runs before identity rewrites the rendered prompt.
 		{ name: "oasis-memory", factory: createMemoryExtension() },
+		// "Stop saying X" sticks across turns, compaction and sessions.
+		{ name: "oasis-corrections", factory: createStandingCorrectionsExtension() },
 		{ name: "oasis-identity", factory: identityExtension },
 		// CLAUDE.md/AGENTS.md hierarchy, @imports, rules and other tools' instruction files.
 		{ name: "oasis-instructions", factory: createInstructionsExtension() },

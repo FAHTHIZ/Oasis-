@@ -41,11 +41,13 @@ export { oasisExtensions } from "./extensions/index.ts";
 export { createMemoryExtension, type MemoryOptions } from "./extensions/memory.ts";
 export { safetyExtension } from "./extensions/safety.ts";
 export { createSandboxExtension, type SandboxExtensionOptions, type SandboxState } from "./extensions/sandbox.ts";
+export { createStandingCorrectionsExtension } from "./extensions/standing-corrections.ts";
 export { todoExtension } from "./extensions/todo.ts";
 export { TOOL_REPAIR_TYPE, toolRepairExtension } from "./extensions/tool-repair.ts";
 export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type TurnGatesOptions } from "./extensions/turn-gates.ts";
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
+export { CorrectionStore, correctionViolations, extractCorrections } from "./memory/corrections.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
 export {

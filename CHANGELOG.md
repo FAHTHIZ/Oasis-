@@ -4,6 +4,7 @@
 
 ### Added
 
+- Standing corrections, ported from the original OASIS: "stop saying X" is saved, restated every turn and enforced with one rewrite; `/corrections`.
 - Tolerant edits, ported from the original OASIS: unique indentation-, spacing- and line-number-insensitive matches for `edit`, re-indented replacements, and closest-match hints on failure.
 - Worktree isolation for subagents (`isolation: "worktree"`), ported from the original OASIS: own branch in `.oasis/worktrees/`, commit on finish with a secret check, removal when unchanged, Cursor/Windsurf/OpenHands setup files, `/worktrees`.
 - Context savings, ported from the original OASIS: read dedup pointers, superseded `read`/`bash` result stubs once the context is half full, and bash output condensing (passing tests, npm banners, progress redraws).
