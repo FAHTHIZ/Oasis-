@@ -16,6 +16,7 @@ import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
 import { createPackageVettingExtension } from "./package-vetting.ts";
+import { createPermissionsExtension } from "./permissions.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
 import { createProgressGuardExtension } from "./progress.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
@@ -52,6 +53,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-hooks", factory: createHooksExtension() },
 		// Plan mode blocks changes before safety and sandbox prompt for them.
 		{ name: "oasis-plan-mode", factory: createPlanModeExtension() },
+		// Permission rules decide first: deny blocks, allow pre-approves for the safety check below.
+		{ name: "oasis-permissions", factory: createPermissionsExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },
@@ -99,6 +102,8 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		// Loop detection and model fallback.
 		{ name: "oasis-reliability", factory: createReliabilityExtension() },
 		{ name: "oasis-hooks", factory: createHooksExtension({ depth }) },
+		// Permission rules decide first: deny blocks, allow pre-approves for the safety check below.
+		{ name: "oasis-permissions", factory: createPermissionsExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-agent-ignore", factory: createAgentIgnoreExtension() },

@@ -94,6 +94,7 @@ export { createNoopEditExtension } from "./extensions/noop-edit.ts";
 export { createNotebookExtension } from "./extensions/notebook.ts";
 export { createNotesExtension, RECALLED_NOTES_TYPE } from "./extensions/notes.ts";
 export { createPackageVettingExtension } from "./extensions/package-vetting.ts";
+export { createPermissionsExtension } from "./extensions/permissions.ts";
 export { createProgressGuardExtension } from "./extensions/progress.ts";
 export { createRepoMapExtension } from "./extensions/repo-map.ts";
 export { safetyExtension } from "./extensions/safety.ts";
@@ -151,6 +152,20 @@ export {
 	vetInstallCommand,
 	vetPackage,
 } from "./security/package-vetting.ts";
+export {
+	type Decision,
+	describeRule,
+	evaluatePermissions,
+	globMatch,
+	isPreApproved,
+	type LoadedPermissions,
+	loadPermissions,
+	type PermissionRule,
+	type PermissionVerdict,
+	parseRule,
+	ruleMatches,
+	simpleCommands,
+} from "./security/permissions.ts";
 export {
 	type ProtectedHit,
 	protectedConfigPath,

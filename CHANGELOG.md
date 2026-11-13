@@ -4,6 +4,7 @@
 
 ### Added
 
+- Permission rules in Claude Code's `permissions` format (`src/security/permissions.ts`): allow, ask and deny lists from Claude and OASIS settings files with Bash command globs and legacy `:*` prefixes, gitignore-style Read/Edit paths, `WebFetch(domain:…)`, `Tool(param:value)`, MCP server rules and `*`; allow rules pre-approve the shell safety question; `/permissions`. `OASIS_PERMISSIONS=0`.
 - Package vetting against slopsquatting, ported from the original OASIS (`src/security/package-vetting.ts`, popularity lists from npm-high-impact, top-pypi-packages and crates.io in `src/security/data/`): bash installs of names missing from npm, PyPI or crates.io are blocked, typosquat lookalikes, brand-new, barely downloaded or OSV-malicious packages need confirmation, and OSV vulnerabilities are noted. `OASIS_PACKAGE_VETTING=0`.
 - Progress guards, ported from the original OASIS agent loop (`src/core/progress.ts`): bash failures with the same fingerprint across rounds of edits get a "fix is not reaching the cause" note (escalating at five), and repeated state-changing commands with no edits since get a repeated-side-effect warning. `OASIS_PROGRESS_GUARD=0`.
 - Early-stop turn gates, ported from the original OASIS turn guards (`src/core/intent.ts`): on a change request where nothing changed, replies that describe the work, announce a next step and stop, give up after a tool error, refuse spuriously, or claim an unmade change get one reminder (and a visible note for unmade-change claims).

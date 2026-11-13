@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { isToolCallEventType } from "@earendil-works/pi-coding-agent";
+import { isPreApproved } from "../security/permissions.ts";
 import { evaluateShellCommand } from "../shell/policy.ts";
 
 /**
@@ -12,7 +13,7 @@ export function safetyExtension(pi: ExtensionAPI): void {
 		if (!isToolCallEventType("bash", event)) return undefined;
 		const verdict = evaluateShellCommand(event.input.command);
 		if (verdict.block) return { block: true, reason: `OASIS safety policy: ${verdict.reason}.` };
-		if (!verdict.ask) return undefined;
+		if (!verdict.ask || isPreApproved(event.toolCallId)) return undefined;
 		const command = event.input.command.length > 400 ? `${event.input.command.slice(0, 400)}...` : event.input.command;
 		if (ctx.hasUI && (await ctx.ui.confirm("Run a high-risk command?", `This command ${verdict.ask}.\n\n${command}`))) return undefined;
 		return {
