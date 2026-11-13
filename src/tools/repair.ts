@@ -96,7 +96,7 @@ function normalizeEdit(e: unknown): unknown {
 	return o;
 }
 
-function repairArgs(tool: string, input: Args): Args {
+export function repairArgs(tool: string, input: Args): Args {
 	const args: Args = { ...input };
 	if (["read", "write", "edit", "ls", "grep", "find"].includes(tool) && args.path === undefined) {
 		const p = take(args, PATH_KEYS);

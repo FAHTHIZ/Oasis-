@@ -1,5 +1,6 @@
 import type { InlineExtension } from "@earendil-works/pi-coding-agent";
 import { createCheckpointsExtension } from "./checkpoints.ts";
+import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
 import { createMemoryExtension } from "./memory.ts";
@@ -20,6 +21,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-instructions", factory: createInstructionsExtension() },
 		// Repair rewrites calls when the message ends, so safety, sandbox and gates see the real tool and arguments.
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
+		// Claude Code hooks: PreToolUse may rewrite input, so it runs before safety and sandbox check the call.
+		{ name: "oasis-hooks", factory: createHooksExtension() },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension() },
 		{ name: "oasis-todo", factory: todoExtension },
@@ -40,6 +43,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-identity", factory: identityExtension },
 		{ name: "oasis-instructions", factory: createInstructionsExtension() },
 		{ name: "oasis-tool-repair", factory: toolRepairExtension },
+		{ name: "oasis-hooks", factory: createHooksExtension({ depth }) },
 		{ name: "oasis-safety", factory: safetyExtension },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		...(depth < MAX_DEPTH
