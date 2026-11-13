@@ -22,6 +22,7 @@ import {
 	StreamMessageReader,
 	StreamMessageWriter,
 } from "vscode-jsonrpc/node.js";
+import { agentIgnoreMatch, agentIgnoreMessage, isAgentIgnored } from "../security/agent-ignore.ts";
 
 export const LSP_OPERATIONS = [
 	"definition",
@@ -723,6 +724,8 @@ export class LspManager {
 		const rel = relative(this.root, absolute).split(sep).join("/");
 		if (!rel || rel.startsWith("..") || isAbsolute(rel)) throw new Error("lsp path must be a file inside the workspace.");
 		if (SENSITIVE.test(rel)) throw new Error("That file is protected.");
+		const ignored = agentIgnoreMatch(absolute, { env: this.options.env });
+		if (ignored) throw new Error(agentIgnoreMessage(ignored, rel));
 		let file = false;
 		try {
 			file = statSync(absolute).isFile();
@@ -742,6 +745,7 @@ export class LspManager {
 		const inside = rel && !rel.startsWith("..") && !isAbsolute(rel);
 		const shown = inside ? rel.split(sep).join("/") : absolute;
 		if (inside && SENSITIVE.test(shown)) return { path: shown, line: "[hidden: sensitive file]" };
+		if (isAgentIgnored(absolute, { env: this.options.env })) return { path: shown, line: "[hidden: agent ignore file]" };
 		if (!cache.has(absolute)) {
 			try {
 				cache.set(absolute, readFileSync(absolute, "utf8"));

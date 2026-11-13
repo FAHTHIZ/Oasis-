@@ -14,6 +14,7 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, posix, relative, resolve, sep } from "node:path";
+import { isAgentIgnored } from "../security/agent-ignore.ts";
 import { analyzeCode, type Definition, grammarForFile, loadGrammar } from "./ast.ts";
 
 const MAX_FILES = 4000;
@@ -355,7 +356,11 @@ export function listSourceFiles(
 	accept: (rel: string) => boolean = (rel) => Boolean(languageForFile(rel)),
 ): string[] {
 	const keep = (rel: string) =>
-		accept(rel) && !SENSITIVE.test(rel) && !rel.split("/").some((part) => SKIP_DIRS.has(part)) && !rel.endsWith(".min.js");
+		accept(rel) &&
+		!SENSITIVE.test(rel) &&
+		!rel.split("/").some((part) => SKIP_DIRS.has(part)) &&
+		!rel.endsWith(".min.js") &&
+		!isAgentIgnored(join(base, rel));
 	try {
 		const out = execFileSync("git", ["ls-files", "-z", "--cached", "--others", "--exclude-standard"], {
 			cwd: base,

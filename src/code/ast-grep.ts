@@ -15,6 +15,7 @@ import { extname, isAbsolute, relative, resolve, sep } from "node:path";
 import type { SgNode } from "@ast-grep/napi";
 import { createTwoFilesPatch, diffArrays } from "diff";
 import { minimatch } from "minimatch";
+import { agentIgnoreMatch, agentIgnoreMessage } from "../security/agent-ignore.ts";
 import { listSourceFiles } from "./repo-map.ts";
 
 type Napi = typeof import("@ast-grep/napi");
@@ -306,6 +307,8 @@ export function runAstGrep(root: string, args: AstGrepArgs, signal?: AbortSignal
 				return !exclude.some((g) => minimatch(rel, g, { dot: true, matchBase: !g.includes("/") }));
 			});
 	if (single && SENSITIVE.test(scope)) throw new Error("That file is protected.");
+	const ignored = single ? agentIgnoreMatch(absolute) : null;
+	if (ignored) throw new Error(agentIgnoreMessage(ignored, scope));
 	if (single && !languageOf(scope)) throw new Error(`ast_grep has no grammar for ${scope}${only ? ` as ${only}` : ""}.`);
 
 	const { single: singles, multi } = metaVariables(pattern);

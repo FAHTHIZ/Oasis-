@@ -55,6 +55,7 @@ export {
 } from "./core/gates.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
+export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";
 export {
 	CHECKPOINT_TYPE,
@@ -93,6 +94,16 @@ export {
 	type SandboxMode,
 	type UserSandboxConfig,
 } from "./sandbox/policy.ts";
+export {
+	AGENT_IGNORE_FILES,
+	type AgentIgnoreMatch,
+	agentIgnoreMatch,
+	agentIgnoreMessage,
+	clearAgentIgnoreCache,
+	ignoredByRules,
+	isAgentIgnored,
+	parseIgnoreFile,
+} from "./security/agent-ignore.ts";
 export {
 	type ProtectedHit,
 	protectedConfigPath,
