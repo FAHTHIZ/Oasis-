@@ -4,6 +4,7 @@
 
 ### Added
 
+- Output styles: `/output-style` with Claude Code-compatible built-in and custom Markdown styles.
 - Background subagents (Claude Code background agents): `task` `run_in_background`, `task_output`, `/tasks`.
 - `ask_user_question` (Claude Code AskUserQuestion) with a per-prompt question budget.
 - Background shell commands (Claude Code run_in_background/BashOutput/KillShell): `bash` `run_in_background`, `bash_output`, `kill_shell`, `/bashes`.

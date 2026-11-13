@@ -22,6 +22,7 @@ import { createModelRoutingExtension } from "./model-routing.ts";
 import { createNoopEditExtension } from "./noop-edit.ts";
 import { createNotebookExtension } from "./notebook.ts";
 import { createNotesExtension } from "./notes.ts";
+import { createOutputStylesExtension } from "./output-styles.ts";
 import { createPackageVettingExtension } from "./package-vetting.ts";
 import { createPermissionsExtension } from "./permissions.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
@@ -92,6 +93,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-scratch", factory: createScratchExtension() },
 		// Loose ends from final replies, shown at the next session start.
 		{ name: "oasis-followups", factory: createFollowupsExtension() },
+		{ name: "oasis-output-styles", factory: createOutputStylesExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).

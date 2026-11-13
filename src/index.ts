@@ -68,6 +68,7 @@ export {
 } from "./core/intent.ts";
 export { type CheckRun, TurnLedger } from "./core/ledger.ts";
 export { classifyTask, type RouteDecision } from "./core/model-routing.ts";
+export { BUILTIN_STYLES, loadOutputStyles, type OutputStyle } from "./core/output-styles.ts";
 export {
 	CommandProgress,
 	failureSignature,
