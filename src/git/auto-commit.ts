@@ -107,7 +107,7 @@ export async function autoCommitTurn(options: { root: string; paths: string[]; p
 		return { error: `could not resolve the repository path: ${(error as Error).message}` };
 	}
 	const inside = [...new Set(options.paths.map((item) => relative(physicalRepo, resolve(physicalRoot, item))))].filter(
-		(item) => item && item !== ".." && !item.startsWith(".." + sep) && !isAbsolute(item),
+		(item) => item && item !== ".." && !item.startsWith(`..${sep}`) && !isAbsolute(item),
 	);
 	if (!inside.length) return { skipped: "the changed files are outside the repository" };
 	const ignored = await git(["check-ignore", "--stdin"], repo, `${inside.join("\n")}\n`);

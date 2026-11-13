@@ -1,7 +1,7 @@
 import { fauxAssistantMessage, fauxText, fauxToolCall } from "@earendil-works/pi-ai";
 import { afterEach, describe, expect, it } from "vitest";
 import { createTerminalExtension } from "../src/extensions/terminal.ts";
-import { cleanOutput, keyBytes, TerminalSession, TerminalSessions, type PtyProcess } from "../src/shell/pty.ts";
+import { cleanOutput, keyBytes, type PtyProcess, TerminalSession, TerminalSessions } from "../src/shell/pty.ts";
 import { createHarness, type Harness, messagesText } from "./harness.ts";
 
 const call = (args: Parameters<typeof fauxToolCall>[1]) => fauxAssistantMessage(fauxToolCall("terminal", args), { stopReason: "toolUse" });
