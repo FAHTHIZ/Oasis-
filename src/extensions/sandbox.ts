@@ -19,6 +19,7 @@ import {
 	SANDBOX_MODES,
 	type SandboxMode,
 } from "../sandbox/policy.ts";
+import { backendFromEnv, type ShellBackend } from "../shell/backends.ts";
 import { registerBashWithBackground } from "./background-shell.ts";
 
 export interface SandboxState {
@@ -61,6 +62,8 @@ export interface SandboxExtensionOptions {
 
 /** The main session's sandbox, shared with subagents in the same process. */
 let mainState: SandboxState | undefined;
+/** The main session's terminal backend, shared with subagents too. */
+let mainBackend: ShellBackend | undefined;
 
 export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 	return function sandboxExtension(pi: ExtensionAPI): void {
@@ -79,8 +82,12 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 				type: "string",
 			});
 
+		// Hermes-style terminal backend: commands run in a Docker container or over SSH instead.
+		let backend: ShellBackend | undefined;
 		const operations: BashOperations = {
 			async exec(command, cwd, execOptions) {
+				const via = options.inherit ? mainBackend : backend;
+				if (via) return local.exec(await via.wrap(command, cwd), cwd, execOptions);
 				if (!state.active) return local.exec(command, cwd, execOptions);
 				const wrapped = await SandboxManager.wrapWithSandbox(command, undefined, undefined, execOptions.signal);
 				return local.exec(wrapped, cwd, execOptions);
@@ -97,6 +104,17 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 				return;
 			}
 			mainState = state;
+			try {
+				backend = backendFromEnv(ctx.cwd);
+			} catch (error) {
+				ctx.ui.notify(`OASIS_SHELL_BACKEND: ${(error as Error).message}`, "error");
+			}
+			mainBackend = backend;
+			if (backend) {
+				// The container or remote machine is the isolation; the OS sandbox would block docker and ssh themselves.
+				ctx.ui.notify(`Shell commands run in ${backend.describe}.`, "info");
+				state.unavailable = `commands run in ${backend.describe}`;
+			}
 			const addFlag = pi.getFlag("add-dir");
 			for (const raw of [typeof addFlag === "string" ? addFlag : "", process.env.OASIS_ADD_DIRS ?? ""].join(",").split(",")) {
 				if (!raw.trim()) continue;
@@ -118,6 +136,7 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 				allowWrite: [...(user.allowWrite ?? []), ...(state.mode === "workspace-write" ? state.addedDirs : [])],
 			});
 			state.userAllowWrite = (user.allowWrite ?? []).map((p) => (p.startsWith("~/") ? resolve(homedir(), p.slice(2)) : p));
+			if (backend) return;
 			if (!SandboxManager.isSupportedPlatform()) {
 				state.unavailable = `sandboxing is not supported on ${process.platform}`;
 			} else {
@@ -147,6 +166,9 @@ export function createSandboxExtension(options: SandboxExtensionOptions = {}) {
 
 		pi.on("session_shutdown", async () => {
 			if (options.inherit) return;
+			await backend?.dispose().catch(() => {});
+			if (mainBackend === backend) mainBackend = undefined;
+			backend = undefined;
 			if (mainState === state) mainState = undefined;
 			if (state.active) await SandboxManager.reset();
 			state.active = false;
