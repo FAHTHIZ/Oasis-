@@ -88,6 +88,7 @@ export { cronCli } from "./cron/cli.ts";
 export { agentPrompt, defaultOasisCommand, type RunnerOptions, runJob, runNow, SILENT_MARKER, tick } from "./cron/runner.ts";
 export { graceMs, nextRun, parseDuration, parseSchedule, type Schedule, ScheduleError } from "./cron/schedule.ts";
 export { CronError, type CronJob, type CronRun, CronStore, describeJob } from "./cron/store.ts";
+export { extractDocument, isDocument, renderDocument } from "./documents/extract.ts";
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
 export { createAiCommentsExtension } from "./extensions/ai-comments.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";

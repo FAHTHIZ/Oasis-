@@ -8,6 +8,7 @@ import { createCommitGateExtension } from "./commit-gate.ts";
 import { createContextSavingsExtension } from "./context-savings.ts";
 import { createCronExtension } from "./cron.ts";
 import { createDoctorExtension } from "./doctor.ts";
+import { createDocumentsExtension } from "./documents.ts";
 import { createEditMatchExtension } from "./edit-match.ts";
 import { createFollowupsExtension } from "./followups.ts";
 import { createGitSafetyExtension } from "./git-safety.ts";
@@ -100,6 +101,7 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-session-messages", factory: createSessionMessagesExtension() },
 		{ name: "oasis-side-questions", factory: createSideQuestionsExtension() },
 		{ name: "oasis-status-line", factory: createStatusLineExtension() },
+		{ name: "oasis-documents", factory: createDocumentsExtension() },
 		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
 		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
