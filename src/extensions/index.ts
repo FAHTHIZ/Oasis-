@@ -3,6 +3,7 @@ import { createCheckpointsExtension } from "./checkpoints.ts";
 import { createHooksExtension } from "./hooks.ts";
 import { identityExtension } from "./identity.ts";
 import { createInstructionsExtension } from "./instructions.ts";
+import { createMcpExtension } from "./mcp.ts";
 import { createMemoryExtension } from "./memory.ts";
 import { createPlanModeExtension } from "./plan-mode.ts";
 import { createProtectedPathsExtension } from "./protected-paths.ts";
@@ -39,6 +40,8 @@ export function oasisExtensions(): InlineExtension[] {
 		{ name: "oasis-todo", factory: todoExtension },
 		// web_fetch, web_search and the untrusted-content guard.
 		{ name: "oasis-web", factory: createWebExtension() },
+		// Claude Code MCP servers and tool poisoning / rug-pull checks over pi's MCP client.
+		{ name: "oasis-mcp", factory: createMcpExtension() },
 		// skill_manage and the learning nudge (Hermes' procedural memory).
 		{ name: "oasis-skills", factory: createSkillsExtension() },
 		{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions }) },
@@ -67,6 +70,7 @@ export function subagentExtensions(depth: number): InlineExtension[] {
 		{ name: "oasis-protected-paths", factory: createProtectedPathsExtension() },
 		{ name: "oasis-sandbox", factory: createSandboxExtension({ inherit: true }) },
 		{ name: "oasis-web", factory: createWebExtension() },
+		{ name: "oasis-mcp", factory: createMcpExtension({ claude: false }) },
 		...(depth < MAX_DEPTH
 			? [{ name: "oasis-subagents", factory: createSubagentExtension({ childExtensions: subagentExtensions, depth }) }]
 			: []),
