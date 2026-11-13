@@ -73,6 +73,10 @@ export {
 	thrashNote,
 } from "./core/progress.ts";
 export { analyzeTestChange, isTestConfigPath, isTestPath, type TamperFinding, userAllowsTestChanges } from "./core/test-tamper.ts";
+export { cronCli } from "./cron/cli.ts";
+export { agentPrompt, defaultOasisCommand, type RunnerOptions, runJob, runNow, SILENT_MARKER, tick } from "./cron/runner.ts";
+export { graceMs, nextRun, parseDuration, parseSchedule, type Schedule, ScheduleError } from "./cron/schedule.ts";
+export { CronError, type CronJob, type CronRun, CronStore, describeJob } from "./cron/store.ts";
 export { createAgentIgnoreExtension } from "./extensions/agent-ignore.ts";
 export { createAstGrepExtension } from "./extensions/ast-grep.ts";
 export {
@@ -84,6 +88,7 @@ export {
 } from "./extensions/checkpoints.ts";
 export { createCommitGateExtension } from "./extensions/commit-gate.ts";
 export { type ContextSavingsOptions, createContextSavingsExtension } from "./extensions/context-savings.ts";
+export { createCronExtension } from "./extensions/cron.ts";
 export { createEditMatchExtension } from "./extensions/edit-match.ts";
 export { createGitSafetyExtension } from "./extensions/git-safety.ts";
 export { identityExtension, OASIS_GUIDELINES, OASIS_PREAMBLE, rewriteIdentity } from "./extensions/identity.ts";
