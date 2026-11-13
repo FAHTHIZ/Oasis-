@@ -118,6 +118,7 @@ export { createTurnGatesExtension, GATE_NOTICE_TYPE, GATE_REMINDER_TYPE, type Tu
 export { type ClaudeMcpServer, convertClaudeServer, expandClaudeVars, loadClaudeMcpServers } from "./mcp/claude.ts";
 export { inspectMcpTool, McpPins, toolFingerprint } from "./mcp/trust.ts";
 export { CorrectionStore, correctionViolations, extractCorrections } from "./memory/corrections.ts";
+export { extractFollowups, type Followup, FollowupStore, formatFollowups } from "./memory/followups.ts";
 export { NOTE_CATEGORIES, type Note, NoteStore, noteFreshness, tokenize as tokenizeNotes } from "./memory/notes.ts";
 export { entryText, ftsQuery, type IndexedMessage, type SearchHit, SessionIndex } from "./memory/session-index.ts";
 export { MEMORY_LIMITS, MemoryError, MemoryStore, type MemoryTarget, scanMemoryText } from "./memory/store.ts";
@@ -223,3 +224,4 @@ export {
 	renderNotebook,
 } from "./tools/notebook.ts";
 export { type RepairedCall, repairToolCall, unknownToolMessage } from "./tools/repair.ts";
+export { ensureScratch, isScratchPath, SCRATCH_ROOT, scratchKey, scratchPrompt } from "./workspace/scratch.ts";

@@ -4,6 +4,7 @@
  * agent's final reply against this record.
  */
 import { analyzeCheck } from "../shell/checks.ts";
+import { isScratchPath } from "../workspace/scratch.ts";
 import type { TamperFinding } from "./test-tamper.ts";
 
 export interface CheckRun {
@@ -66,6 +67,8 @@ export class TurnLedger {
 
 	recordEdit(path: string, error?: string): void {
 		const key = normalize(path);
+		// Throwaway files in the session scratch space are not project changes.
+		if (isScratchPath(key)) return;
 		if (error !== undefined) {
 			this.failedEdits.set(key, error.split("\n")[0]?.slice(0, 200) || "the edit failed");
 			return;
