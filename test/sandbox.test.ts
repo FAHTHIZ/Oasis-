@@ -79,7 +79,8 @@ describe("sandbox extension", () => {
 		expect(readFileSync(join(harness.cwd, "in.txt"), "utf8").trim()).toBe("inside");
 		expect(existsSync(escapePath)).toBe(false);
 		const text = messagesText(harness.calls[1]?.messages ?? []);
-		expect(text).toContain("Read-only file system");
+		// bubblewrap reports EROFS; macOS Seatbelt reports EPERM.
+		expect(text).toMatch(/Read-only file system|Operation not permitted/);
 		expect(text).toContain("[OASIS sandbox]");
 	});
 });
