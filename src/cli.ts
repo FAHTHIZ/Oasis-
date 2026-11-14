@@ -1,7 +1,9 @@
 import { main } from "@earendil-works/pi-coding-agent";
+import { installRetryDefaults } from "./core/retry-defaults.ts";
 import { applySafeMode } from "./core/safe-mode.ts";
 import { oasisExtensions } from "./extensions/index.ts";
 
+installRetryDefaults();
 const argv = applySafeMode(process.argv.slice(2)).argv;
 if (argv[0] === "cron") {
 	const { cronCli } = await import("./cron/cli.ts");

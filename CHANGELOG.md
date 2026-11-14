@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+### Changed
+
+- Transient provider errors (overloaded, 429/5xx, dropped streams, timeouts) are retried 10 times with backoff up to 32 s, as in Claude Code, instead of 3 times. `retry.*` settings still override this.
+- `--help` and the "no API key" message describe OASIS commands and paths instead of the engine's.
+
 ### Added
 
+- One-line installers: `curl -fsSL https://raw.githubusercontent.com/FAHTHIZ/Oasis-/main/install.sh | bash` (macOS, Linux) and `irm https://raw.githubusercontent.com/FAHTHIZ/Oasis-/main/install.ps1 | iex` (Windows). They set up a private Node.js when needed, need no sudo, and `--with-tools` adds language servers.
+- `oasis update` updates OASIS itself (git pull, `npm ci`, build) instead of the engine it is built on.
 - GitHub Action (`action.yml`, `oasis github`): `@oasis` mentions on issues and pull requests, plus a prompt-driven automation mode.
 - `/review` (Codex's rubric), `/security-review` (Anthropic's command) and `/init` (Codex's AGENTS.md prompt).
 - `` !`command` `` output in slash-command files, as in Claude Code.
