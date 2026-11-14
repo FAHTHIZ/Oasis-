@@ -878,6 +878,14 @@ export class LspManager {
 		client.resyncOpenDocuments();
 		const { uri, text } = client.sync(absolute, spec.languageId ?? LANGUAGE_IDS[extname(rel).toLowerCase()] ?? spec.name);
 		await client.whenIdle(PROJECT_LOAD_TIMEOUT);
+		// Progress reporting can start late on a busy machine, so whenIdle's grace period may pass before
+		// the project loads; a syntax-only answer then stops at the import instead of the declaration.
+		// Push-model servers publish a file's first diagnostics only once its project is loaded, so wait
+		// for those (bounded) before asking a cross-file question about a newly opened file.
+		if (!client.capabilities.diagnosticProvider && !client.diagnostics.has(uri) && operation !== "document_symbols") {
+			await client.waitForDiagnostics(uri, this.options.diagnosticTimeoutMs ?? 8000);
+			await client.whenIdle(PROJECT_LOAD_TIMEOUT);
+		}
 		const cache = new Map<string, string | null>([[absolute, text]]);
 		const head = `${spec.name} ${operation} ${rel}`;
 		if (operation === "document_symbols") {
