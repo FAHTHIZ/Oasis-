@@ -42,4 +42,9 @@ process.emitWarning = (warning, ...rest) => {
 	if (type === "ExperimentalWarning" && /SQLite/i.test(text ?? "")) return;
 	return emitWarning.call(process, warning, ...rest);
 };
+const { isHelpInvocation, installHelpRebrand } = await import("./branding.mjs");
+if (isHelpInvocation(args)) {
+	installHelpRebrand(process.stdout);
+	installHelpRebrand(process.stderr);
+}
 await import("../dist/cli.mjs");
