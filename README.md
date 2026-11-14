@@ -16,18 +16,49 @@ The goal is to match or beat Claude Code, Codex, Hermes Agent and Google Antigra
 
 ## Install
 
-Requires Node.js 22.19 or newer.
+macOS and Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/FAHTHIZ/Oasis-/main/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/FAHTHIZ/Oasis-/main/install.ps1 | iex
+```
+
+That's all you need. The installer uses your Node.js if it is 22.19 or newer, and otherwise downloads a private, checksum-verified copy into `~/.oasis/node` without touching your system. It puts `oasis` on your PATH and needs no sudo or administrator rights. Run it again at any time to update, or run `oasis update`.
+
+Add language servers for TypeScript, Python, Bash, YAML and JSON/HTML/CSS, which power the `lsp` tool and post-edit type checks (plus `gopls` and `rust-analyzer` when Go or rustup are installed):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/FAHTHIZ/Oasis-/main/install.sh | bash -s -- --with-tools
+```
+
+On Windows, set `$env:OASIS_WITH_TOOLS = "1"` before running the PowerShell line. Other options: `--branch <name>`, `--dir <path>`, `--bin-dir <path>`, `--no-modify-path` and `--uninstall`. Uninstalling keeps your settings and sessions.
+
+Then, in any project:
+
+```sh
+oasis           # type /login to pick a provider, or set ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY, ...
+oasis doctor    # checks Node, git, ripgrep, credentials, settings, hooks, MCP servers and language servers
+```
+
+Settings, sessions and credentials live in `~/.oasis/`; project settings live in `.oasis/` in your repository.
+
+<details>
+<summary>From source</summary>
 
 ```sh
 git clone https://github.com/FAHTHIZ/Oasis-.git oasis
 cd oasis
-npm install
+npm ci
 npm run build
 npm link        # puts `oasis` on your PATH
-oasis
 ```
 
-Inside the app, run `/login` to sign in to a provider, or set an API key such as `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`. Settings, sessions and credentials live in `~/.oasis/`; project settings live in `.oasis/` in your repository.
+</details>
 
 ## What OASIS adds on top of pi
 

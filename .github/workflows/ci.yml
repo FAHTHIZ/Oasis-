@@ -23,3 +23,48 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: ./bin/oasis.mjs --version
+  installer:
+    # Runs the real one-line installers against this commit on a machine with no Node.js set up.
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: git checkout -B ci-install
+      - name: install.sh
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          OASIS_REPO: file://${{ github.workspace }}
+          OASIS_BRANCH: ci-install
+          OASIS_HOME: ${{ runner.temp }}/oasis-home
+          OASIS_BIN_DIR: ${{ runner.temp }}/oasis-bin
+          OASIS_NODE_VERSION: 22.21.1
+        run: |
+          # Hide any preinstalled Node.js so the installer has to fetch its own.
+          export PATH="$(echo "$PATH" | tr ':' '\n' | grep -viE 'node|hostedtoolcache' | paste -sd: -)"
+          bash install.sh --no-modify-path
+          "$OASIS_BIN_DIR/oasis" --version
+          "$OASIS_BIN_DIR/oasis" doctor || true
+          bash install.sh --no-modify-path
+          "$OASIS_BIN_DIR/oasis" update
+          bash install.sh --uninstall
+          test ! -e "$OASIS_BIN_DIR/oasis"
+      - name: install.ps1
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          OASIS_REPO: ${{ github.workspace }}
+          OASIS_BRANCH: ci-install
+          OASIS_HOME: ${{ runner.temp }}\oasis-home
+        run: |
+          ./install.ps1
+          & "$env:OASIS_HOME\bin\oasis.cmd" --version
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          & "$env:OASIS_HOME\bin\oasis.cmd" doctor
+          $env:OASIS_UNINSTALL = "1"; ./install.ps1
+          if (Test-Path "$env:OASIS_HOME\bin\oasis.cmd") { exit 1 }
