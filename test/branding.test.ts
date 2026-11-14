@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain ESM launcher helper without type declarations
-import { isHelpInvocation, rebrand } from "../bin/branding.mjs";
+import { isHelpInvocation, rebrand, rebrandErrors } from "../bin/branding.mjs";
 
 describe("help rebranding", () => {
 	it("rewrites engine help so it describes OASIS", () => {
@@ -30,5 +30,14 @@ describe("help rebranding", () => {
 		expect(isHelpInvocation(["--help"])).toBe(true);
 		expect(isHelpInvocation(["update", "-h"])).toBe(true);
 		expect(isHelpInvocation(["-p", "hi"])).toBe(false);
+	});
+
+	it("replaces the no-API-key hint with steps that work outside the app", () => {
+		const msg =
+			"No API key found for anthropic.\n\nUse /login to log into a provider via OAuth or API key. See:\n  C:\\Users\\Jo Doe\\.oasis\\app\\dist\\pi-runtime\\docs\\providers.md\n  C:\\Users\\Jo Doe\\.oasis\\app\\dist\\pi-runtime\\docs\\models.md\n";
+		const out = rebrandErrors(msg);
+		expect(out).toContain("No API key found for anthropic.");
+		expect(out).toContain("oasis auth login anthropic");
+		expect(out).not.toContain("pi-runtime");
 	});
 });

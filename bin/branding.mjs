@@ -13,6 +13,20 @@ const REPLACEMENTS = [
 	[/^ {2}PI_SHARE_VIEWER_URL .*\n/gm, ""],
 ];
 
+// Error output from any run. The engine's "no API key" hint tells users to
+// type /login (impossible with -p) and points at its internal docs folder.
+const LOGIN_HELP = /Use \/login to log into a provider via OAuth or API key\. See:\n {2}[^\n]*providers\.md\n {2}[^\n]*models\.md/g;
+const LOGIN_HELP_OASIS = [
+	"To sign in or save an API key, run `oasis auth login <provider>` (for example `oasis auth login anthropic`),",
+	"or set an environment variable such as ANTHROPIC_API_KEY, OPENAI_API_KEY or GEMINI_API_KEY.",
+	"Inside the app, type /login. Run `oasis doctor` to check your setup.",
+].join("\n");
+
+/** Rewrite engine error text that is printed outside the TUI. */
+export function rebrandErrors(text) {
+	return text.replace(LOGIN_HELP, LOGIN_HELP_OASIS);
+}
+
 /** Rewrite engine help text so it describes OASIS. */
 export function rebrand(text) {
 	let out = text;
@@ -25,12 +39,12 @@ export function isHelpInvocation(args) {
 	return args.includes("--help") || args.includes("-h");
 }
 
-/** Rewrite everything written to stdout/stderr through rebrand(). Help output is printed in whole lines. */
-export function installHelpRebrand(stream = process.stdout) {
+/** Rewrite everything written to a stream through `transform`. The engine prints these messages in whole writes. */
+export function installHelpRebrand(stream = process.stdout, transform = rebrand) {
 	const write = stream.write.bind(stream);
 	stream.write = (chunk, ...rest) => {
-		if (typeof chunk === "string") return write(rebrand(chunk), ...rest);
-		if (chunk instanceof Uint8Array) return write(rebrand(Buffer.from(chunk).toString("utf8")), ...rest);
+		if (typeof chunk === "string") return write(transform(chunk), ...rest);
+		if (chunk instanceof Uint8Array) return write(transform(Buffer.from(chunk).toString("utf8")), ...rest);
 		return write(chunk, ...rest);
 	};
 }

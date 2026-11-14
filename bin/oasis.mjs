@@ -42,9 +42,12 @@ process.emitWarning = (warning, ...rest) => {
 	if (type === "ExperimentalWarning" && /SQLite/i.test(text ?? "")) return;
 	return emitWarning.call(process, warning, ...rest);
 };
-const { isHelpInvocation, installHelpRebrand } = await import("./branding.mjs");
+// Engine help and error text name pi; rewrite it so it describes OASIS.
+const { isHelpInvocation, installHelpRebrand, rebrandErrors } = await import("./branding.mjs");
 if (isHelpInvocation(args)) {
 	installHelpRebrand(process.stdout);
 	installHelpRebrand(process.stderr);
+} else {
+	installHelpRebrand(process.stderr, rebrandErrors);
 }
 await import("../dist/cli.mjs");
